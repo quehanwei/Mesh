@@ -16,6 +16,7 @@ import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -37,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothMesh mesh;
     private ArrayMap<String, BluetoothDevice> mDeviceMap;
     final static private String TAG = "Mesh";
+    private LocalBroadcastManager mBroadcastManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+        mBroadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
     }
 
     @Override
@@ -119,13 +122,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         IntentFilter filter = new IntentFilter(MeshService.ACTION_GATT_CONNECTED);
-        registerReceiver(broadcastReceiver, filter);
+        mBroadcastManager.registerReceiver(broadcastReceiver, filter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterReceiver(broadcastReceiver);
+        mBroadcastManager.unregisterReceiver(broadcastReceiver);
     }
 
     @Override

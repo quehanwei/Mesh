@@ -4,84 +4,169 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import au.com.ds.ef.EasyFlow;
-import au.com.ds.ef.Event;
-import au.com.ds.ef.FlowBuilder;
-import au.com.ds.ef.State;
-import au.com.ds.ef.StatefulContext;
-import au.com.ds.ef.call.StateHandler;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static ru.ximen.mesh.MeshService.EXTRA_DATA;
 
 /**
  * Created by ximen on 18.03.18.
  */
 
 public class MeshProvisionModel {
-    private static class FlowContext extends StatefulContext {
-    }
-    // defining states
-    private final State<FlowContext> INVITATION = FlowBuilder.state();
-    private final State<FlowContext> CANCEL = FlowBuilder.state();
-    // defining events
-    private final Event<FlowContext> onStart = FlowBuilder.event();
-    private final Event<FlowContext> onInviteTimeout = FlowBuilder.event();
-
-
-    private EasyFlow<FlowContext> flow;
-
     private final Context mContext;
+    private final MeshProxyModel mProxy;
+    private LocalBroadcastManager mBroadcastManger;
+
     final static private String TAG = "MeshProvision";
 
-    public MeshProvisionModel(Context context) {
+    private byte mAlgorithm;
+    private byte mPKeyType;
+    private byte mStaticOOBType;
+    private byte mOutputOOBSize;
+    private byte mOutputOOBAction;
+    private byte mInputOOBSize;
+    private byte mInputOOBAction;
+
+    public MeshProvisionModel(Context context, MeshProxyModel proxy) {
         mContext = context;
+        mProxy = proxy;
         IntentFilter filter = new IntentFilter(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
-        mContext.registerReceiver(mGattUpdateReceiver, filter);
-        initFlow();
-        bindFlow();
+        mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
+        mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
     }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            Log.d(TAG, "Got provision data: ");
+            Log.d(TAG, "Got provision data");
+            byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
+            MeshProvisionPDU pdu = new MeshProvisionPDU(data);
+            if (pdu.getType() == MeshProvisionPDU.CAPABILITIES) {
+                Log.d(TAG, "Got capabilities");
+                mAlgorithm = pdu.getAlgorithms();
+                mPKeyType = pdu.getPKeyType();
+                mStaticOOBType = pdu.getStaticOOBType();
+                mOutputOOBSize = pdu.getOutputOOBSize();
+                mOutputOOBAction = pdu.getOutputOOBAction();
+                mInputOOBSize = pdu.getInputOOBSize();
+                mInputOOBAction = pdu.getInputOOBAction();
+                checkCapabilities();
+            }
+            cancel();
         }
     };
 
     public void startProvision(){
-        flow.start(new FlowContext());
+        Log.d(TAG, "Sending invite PDU");
+        MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.INVITE);
+        mProxy.send(pdu);
+        // send INVITE PDU
+        // start timer
     }
 
     public void close() {
-        mContext.unregisterReceiver(mGattUpdateReceiver);
+        mBroadcastManger.unregisterReceiver(mGattUpdateReceiver);
     }
 
-    private void initFlow() {
-        if (flow != null) {
-            return;
+    private void checkCapabilities() {
+        Log.d(TAG, "Checking capabilities");
+        if (mAlgorithm != 1) {      // Bit 0
+            Log.d(TAG, "Device algorithm " + mAlgorithm + " not supported");
+            cancel();
+        } else Log.d(TAG, "Algorithm FIPS P-256 EC");
+        if (mPKeyType > 1) {        // Bit 0
+            Log.e(TAG, "Device public key type value " + mPKeyType + " prohibited");
+            cancel();
+        } else if (mPKeyType == 1) Log.d(TAG, "Public key OOB information available");
+        else Log.d(TAG, "Public key OOB information not available");
+        if (mStaticOOBType > 1) {
+            Log.e(TAG, "Device static OOB information value " + mStaticOOBType + " prohibited");
+            cancel();
+        } else if (mStaticOOBType == 1) Log.d(TAG, "Static OOB information available");
+        else Log.d(TAG, "Static OOB information not available");
+        if (mOutputOOBSize > 8) {
+            Log.e(TAG, "Device OOB size " + mOutputOOBSize + " not supported");
+            cancel();
+        } else if (mOutputOOBSize == 0) Log.d(TAG, "Device does not support OOB");
+        else Log.d(TAG, "Device OOB size = " + mOutputOOBSize);
+        if (mOutputOOBAction > 0x1f) {      // 5 bits only
+            Log.e(TAG, "Device OOB action " + mOutputOOBAction + " not supported");
+            cancel();
+        } else {
+            List<String> action = new ArrayList<>();
+            if ((mOutputOOBAction & 1) != 0) action.add("Blink");
+            if ((mOutputOOBAction & 2) != 0) action.add("Beep");
+            if ((mOutputOOBAction & 4) != 0) action.add("Vibrate");
+            if ((mOutputOOBAction & 8) != 0) action.add("Output numeric");
+            if ((mOutputOOBAction & 16) != 0) action.add("Output alphanumeric");
+            Log.d(TAG, "Device OOB action: " + action);
         }
-        flow = FlowBuilder
-                .from(INVITATION).transit(
-                        onInviteTimeout.to(CANCEL).transit(
-                                onStart.to(INVITATION)
-                        )
-                ).executor(new UiThreadExecutor());
+
+        if (mInputOOBSize > 9) {
+            Log.e(TAG, "Device Input OOB size " + mInputOOBSize + " not supported");
+            cancel();
+        } else if (mInputOOBSize == 0) Log.d(TAG, "Device does not support Input OOB");
+        else Log.d(TAG, "Device Input OOB size = " + mInputOOBSize);
+        if (mInputOOBAction > 0x0f) {
+            Log.e(TAG, "Device Input OOB action " + mInputOOBAction + " not supported");
+            cancel();
+        } else {
+            List<String> action = new ArrayList<>();
+            if ((mInputOOBAction & 1) != 0) action.add("Push");
+            if ((mInputOOBAction & 2) != 0) action.add("Twist");
+            if ((mInputOOBAction & 4) != 0) action.add("Input number");
+            if ((mInputOOBAction & 8) != 0) action.add("Input alphanumeric");
+            Log.d(TAG, "Device Input OOB action: " + action);
+        }
+
+        start();
     }
 
-    private void bindFlow() {
-        INVITATION.whenEnter(new StateHandler<FlowContext>() {
-            @Override
-            public void call(State<FlowContext> state, FlowContext context) throws Exception {
-                // send INVITE PDU
-                // start timer
-            }
-        });
-        CANCEL.whenEnter(new StateHandler<FlowContext>() {
-            @Override
-            public void call(State<FlowContext> state, FlowContext context) throws Exception {
-                // tide up to initial state
-            }
-        });
+    private void start() {
+        Log.d(TAG, "Sending START PDU");
+        MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.START);
+        pdu.setAlgorithm(mAlgorithm);
+        pdu.setPKeyType(mPKeyType);
+        if (mStaticOOBType > 0) {
+            pdu.setAuthMethod((byte) 1);                    // Static OOB auth used
+            pdu.setAuthAction((byte) 0);                    // 5.4.1.3
+            pdu.setAuthSize((byte) 0);                      // 5.4.1.3
+        } else if (mOutputOOBSize > 0) {
+            pdu.setAuthMethod((byte) 2);                    // Output OOB auth used
+            if ((mOutputOOBAction & 8) != 0)
+                pdu.setAuthAction((byte) 8);                 // Output number preffered
+            else if ((mOutputOOBAction & 16) != 0)
+                pdu.setAuthAction((byte) 16);
+            else if ((mOutputOOBAction & 2) != 0)
+                pdu.setAuthAction((byte) 2);
+            else if ((mOutputOOBAction & 1) != 0)
+                pdu.setAuthAction((byte) 1);
+            else
+                pdu.setAuthAction((byte) 4);
+            pdu.setAuthSize(mOutputOOBSize);                // 5.4.1.3
+        } else if (mInputOOBSize > 0) {
+            pdu.setAuthMethod((byte) 3);                    // Input OOB auth used
+            pdu.setAuthAction((byte) 2);                    // Default Input OOB action - input numeric (should take from settings)
+            pdu.setAuthSize((byte) 1);                      // Default Input OOB size (should take from settings)
+        } else {
+            pdu.setAuthMethod((byte) 0);                    // No OOB auth used
+            pdu.setAuthAction((byte) 0);                    // 5.4.1.3
+            pdu.setAuthSize((byte) 0);                      // 5.4.1.3
+        }
+        Log.d(TAG, "START PDU: " + Arrays.toString(pdu.data()));
+        mProxy.send(pdu);
+    }
+
+
+    private void cancel() {
+        Log.d(TAG, "Provision canceled");
+        // tide up to initial state
     }
 }
+

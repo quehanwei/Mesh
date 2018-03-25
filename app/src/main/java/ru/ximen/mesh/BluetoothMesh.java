@@ -4,12 +4,12 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -18,6 +18,8 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.ParcelUuid;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.io.Serializable;
@@ -43,15 +45,10 @@ public class BluetoothMesh {
     private Context mContext;                       // Application context
     private BluetoothGatt mBluetoothGatt;           // GATT for sending and receiving messages
     private MeshService mService;                   // Service for bluetooth operations
+    private LocalBroadcastManager mBroadcastManager;
 
-    final static public UUID MESH_PROVISION_DATA_IN   = UUID.fromString("00002adb-0000-1000-8000-00805f9b34fb");
-    final static public UUID MESH_PROVISION_DATA_OUT   = UUID.fromString("00002adc-0000-1000-8000-00805f9b34fb");
-    final static public UUID MESH_PROXY_DATA_IN   = UUID.fromString("00002add-0000-1000-8000-00805f9b34fb");
-    final static public UUID MESH_PROXY_DATA_OUT   = UUID.fromString("00002ade-0000-1000-8000-00805f9b34fb");
-    final static public UUID MESH_PROXY_SERVICE   = UUID.fromString("00001828-0000-1000-8000-00805f9b34fb");
-    final static public UUID MESH_PROVISION_SERVICE   = UUID.fromString("00001827-0000-1000-8000-00805f9b34fb");
-    final static public UUID CLIENT_CHARACTERISTIC_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     final static private String TAG = "BluetoothMesh";
+    final static private int DEFAULT_SCAN_TIMEOUT = 10000;
 
     public ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
@@ -88,17 +85,19 @@ public class BluetoothMesh {
         mBluetoothAdapter = bluetoothManager.getAdapter();
         mScanResult = new ArrayList<>();
         mHandler = new Handler();
-        setScanTimeout(10000);
+        setScanTimeout(DEFAULT_SCAN_TIMEOUT);      // Default value
         Log.d(TAG, "Binding service");
         Intent intent = new Intent(mContext, MeshService.class);
         if (!mContext.bindService(intent, mConnection, Context.BIND_AUTO_CREATE)) {
             Log.e(TAG, "Error binding service");
+
         }
         IntentFilter filter = new IntentFilter(MeshService.ACTION_GATT_CONNECTED);
         filter.addAction(MeshService.ACTION_GATT_DISCONNECTED);
-        context.registerReceiver(mGattUpdateReceiver, filter);
-        proxy = new MeshProxyModel(mContext);
-        provisioner = new MeshProvisionModel(mContext);
+        proxy = new MeshProxyModel(mContext, mBluetoothGatt);
+        provisioner = new MeshProvisionModel(mContext, proxy);
+        mBroadcastManager = LocalBroadcastManager.getInstance(mContext);
+        mBroadcastManager.registerReceiver(mGattUpdateReceiver, filter);
     }
 
     /**
@@ -111,6 +110,10 @@ public class BluetoothMesh {
     }
     public void setScanTimeout(int mScanTimeout) {
         this.mScanTimeout = mScanTimeout;
+    }
+
+    public void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
+        mBluetoothGatt.writeCharacteristic(characteristic);
     }
 
     public interface MeshScanCallback{
@@ -129,18 +132,27 @@ public class BluetoothMesh {
             }
         }, mScanTimeout);
 
-        mBluetoothScanner.startScan(mScanCallback);
+        ScanFilter scanFilter = new ScanFilter.Builder()
+                .setServiceUuid(new ParcelUuid(MeshService.MESH_PROVISION_SERVICE))
+                .build();
+        List<ScanFilter> scanFilters = new ArrayList<>();
+        scanFilters.add(scanFilter);
+
+        ScanSettings scanSettings =
+                new ScanSettings.Builder().build();
+
+        mBluetoothScanner.startScan(scanFilters, scanSettings, mScanCallback);
     }
 
     private ScanCallback mScanCallback = new ScanCallback() {
                 public void onScanResult(int callbackType, ScanResult result) {
                     Log.v(TAG, result.toString());
-                    boolean duplicate = false;
-                    for (ScanResult item : mScanResult)
-                        if (result.getDevice().equals(item.getDevice())) duplicate = true;
-                    if (!duplicate) {
+                    //boolean duplicate = false;
+                    //for (ScanResult item : mScanResult)
+                    //    if (result.getDevice().equals(item.getDevice())) duplicate = true;
+                    //if (!duplicate) {
                         mScanResult.add(result);
-                    }
+                    //}
                 }
             };
 
@@ -176,12 +188,17 @@ public class BluetoothMesh {
         provisioner.startProvision();
     }
 
+    protected MeshService getService() {
+        return mService;
+    }
+
     public void close(){
         Log.d(TAG, "Closing GATT");
         mBluetoothGatt.disconnect();
         Log.d(TAG, "Unbinding service");
+        mService.stopSelf();
         mContext.unbindService(mConnection);
-        mContext.unregisterReceiver(mGattUpdateReceiver);
+        mBroadcastManager.unregisterReceiver(mGattUpdateReceiver);
         provisioner.close();
         proxy.close();
     }
