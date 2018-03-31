@@ -51,6 +51,7 @@ public class MeshProxyModel {
         System.arraycopy(data, 0, params, 1, data.length);
 
         service.writeProvision(params);
+        Log.d(TAG, "Sending: " + Arrays.toString(params));
     }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {

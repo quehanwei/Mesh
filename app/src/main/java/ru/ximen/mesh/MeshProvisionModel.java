@@ -2,6 +2,7 @@ package ru.ximen.mesh;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
@@ -31,6 +32,17 @@ public class MeshProvisionModel {
     private byte mOutputOOBAction;
     private byte mInputOOBSize;
     private byte mInputOOBAction;
+    private MeshProvisionCallback mOOBCallback;
+    private String mOOBKey;
+
+    public interface MeshProvisionCallback {
+        void getOOB(MeshOOBCallback oobCallback);
+    }
+
+    public interface MeshOOBCallback {
+        void gotOOB(String oob);
+    }
+
 
     public MeshProvisionModel(Context context, MeshProxyModel proxy) {
         mContext = context;
@@ -57,17 +69,18 @@ public class MeshProvisionModel {
                 mInputOOBSize = pdu.getInputOOBSize();
                 mInputOOBAction = pdu.getInputOOBAction();
                 checkCapabilities();
+            } else if (pdu.getType() == MeshProvisionPDU.FAILED) {
+                Log.e(TAG, "Got error PDU. Reason: " + pdu.errorString());
             }
             cancel();
         }
     };
 
-    public void startProvision(){
+    public void startProvision(MeshProvisionCallback provisionCallback) {
         Log.d(TAG, "Sending invite PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.INVITE);
         mProxy.send(pdu);
-        // send INVITE PDU
-        // start timer
+        mOOBCallback = provisionCallback;
     }
 
     public void close() {
@@ -124,14 +137,20 @@ public class MeshProvisionModel {
             if ((mInputOOBAction & 8) != 0) action.add("Input alphanumeric");
             Log.d(TAG, "Device Input OOB action: " + action);
         }
-
         start();
+        mOOBCallback.getOOB(new MeshOOBCallback() {
+            @Override
+            public void gotOOB(String oob) {
+                Log.d(TAG, "Got OOB Key: " + oob);
+                mOOBKey = oob;
+            }
+        });
     }
 
     private void start() {
         Log.d(TAG, "Sending START PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.START);
-        pdu.setAlgorithm(mAlgorithm);
+        if (mAlgorithm == 1) pdu.setAlgorithm((byte) 0);
         pdu.setPKeyType(mPKeyType);
         if (mStaticOOBType > 0) {
             pdu.setAuthMethod((byte) 1);                    // Static OOB auth used
@@ -140,15 +159,15 @@ public class MeshProvisionModel {
         } else if (mOutputOOBSize > 0) {
             pdu.setAuthMethod((byte) 2);                    // Output OOB auth used
             if ((mOutputOOBAction & 8) != 0)
-                pdu.setAuthAction((byte) 8);                 // Output number preffered
+                pdu.setAuthAction((byte) 3);                 // Output number preferred
             else if ((mOutputOOBAction & 16) != 0)
-                pdu.setAuthAction((byte) 16);
+                pdu.setAuthAction((byte) 4);               // Next Output alphanumeric
             else if ((mOutputOOBAction & 2) != 0)
-                pdu.setAuthAction((byte) 2);
+                pdu.setAuthAction((byte) 1);                // Next Beep
             else if ((mOutputOOBAction & 1) != 0)
-                pdu.setAuthAction((byte) 1);
+                pdu.setAuthAction((byte) 0);                // Next Blink
             else
-                pdu.setAuthAction((byte) 4);
+                pdu.setAuthAction((byte) 2);                // Else vibrate
             pdu.setAuthSize(mOutputOOBSize);                // 5.4.1.3
         } else if (mInputOOBSize > 0) {
             pdu.setAuthMethod((byte) 3);                    // Input OOB auth used

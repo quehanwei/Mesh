@@ -22,12 +22,8 @@ import android.os.ParcelUuid;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-
-import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 
 /**
  * Class BluetoothMesh used for operations within Bluetooth Mesh network. Contains Proxy and Provision models
@@ -46,6 +42,8 @@ public class BluetoothMesh {
     private BluetoothGatt mBluetoothGatt;           // GATT for sending and receiving messages
     private MeshService mService;                   // Service for bluetooth operations
     private LocalBroadcastManager mBroadcastManager;
+    private boolean mConnected;
+    private boolean mBound;
 
     final static private String TAG = "BluetoothMesh";
     final static private int DEFAULT_SCAN_TIMEOUT = 10000;
@@ -55,11 +53,11 @@ public class BluetoothMesh {
             Log.v(TAG,"connected");
             MeshService.LocalBinder binder = (MeshService.LocalBinder) service;
             mService = binder.getService();
-            //mBound = true;
+            mBound = true;
         }
         public void onServiceDisconnected(ComponentName className) {
             Log.v(TAG,"disconnected");
-            //mBound = false;
+            mBound = false;
         }
     };
 
@@ -80,6 +78,8 @@ public class BluetoothMesh {
      * @param context Application context
      */
     protected BluetoothMesh(Context context){
+        mConnected = false;
+        mBound = false;
         mContext = context;
         final BluetoothManager bluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
@@ -90,7 +90,7 @@ public class BluetoothMesh {
         Intent intent = new Intent(mContext, MeshService.class);
         if (!mContext.bindService(intent, mConnection, Context.BIND_AUTO_CREATE)) {
             Log.e(TAG, "Error binding service");
-
+            mBound = false;
         }
         IntentFilter filter = new IntentFilter(MeshService.ACTION_GATT_CONNECTED);
         filter.addAction(MeshService.ACTION_GATT_DISCONNECTED);
@@ -119,6 +119,7 @@ public class BluetoothMesh {
     public interface MeshScanCallback{
         void finished(ArrayList<ScanResult> scanResults);
     }
+
     // Scans for unprovisioned mesh devices
     // Returns List of BluetoothDevices matching all criteria (0x1812 service UUID)
     public void scan(final MeshScanCallback finishCallback) {
@@ -128,6 +129,7 @@ public class BluetoothMesh {
             @Override
             public void run() {
                 mBluetoothScanner.stopScan(mScanCallback);
+                Log.d(TAG, "Scan result size: " + mScanResult.size());
                 finishCallback.finished(mScanResult);
             }
         }, mScanTimeout);
@@ -162,7 +164,7 @@ public class BluetoothMesh {
     }
 
     public void disconnect(){
-        mBluetoothGatt.disconnect();
+        if (mConnected) mBluetoothGatt.disconnect();
     }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
@@ -170,10 +172,11 @@ public class BluetoothMesh {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (MeshService.ACTION_GATT_CONNECTED.equals(action)) {
+                mConnected = true;
                 Log.d(TAG, "Iterating services list:");
                 mBluetoothGatt.discoverServices();
             } else if (MeshService.ACTION_GATT_DISCONNECTED.equals(action)) {
-
+                mConnected = false;
             }
         }
     };
@@ -184,8 +187,8 @@ public class BluetoothMesh {
     }
 
     // Provisions unprovisioned device
-    public void provisionDevice(){
-        provisioner.startProvision();
+    public void provisionDevice(final MeshProvisionModel.MeshProvisionCallback provisionCallback) {
+        provisioner.startProvision(provisionCallback);
     }
 
     protected MeshService getService() {
@@ -194,10 +197,12 @@ public class BluetoothMesh {
 
     public void close(){
         Log.d(TAG, "Closing GATT");
-        mBluetoothGatt.disconnect();
+        disconnect();
         Log.d(TAG, "Unbinding service");
-        mService.stopSelf();
-        mContext.unbindService(mConnection);
+        if (mBound) {
+            mService.stopSelf();
+            mContext.unbindService(mConnection);
+        }
         mBroadcastManager.unregisterReceiver(mGattUpdateReceiver);
         provisioner.close();
         proxy.close();

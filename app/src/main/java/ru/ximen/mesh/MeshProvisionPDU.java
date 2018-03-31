@@ -105,4 +105,50 @@ public class MeshProvisionPDU extends MeshPDU {
         return mData;
     }
 
+    public byte errorCode() {
+        if (mType == FAILED) {
+            return mData[1];
+        }
+        return (byte) 0xff;
+    }
+
+    public String errorString() {
+        String errorString = new String();
+        if (mType == FAILED) {
+            byte errorCode = mData[1];
+            switch (errorCode) {
+                case 0:
+                    errorString = "Prohibited";
+                    break;
+                case 1:
+                    errorString = "Invalid PDU";
+                    break;
+                case 2:
+                    errorString = "Invalid format";
+                    break;
+                case 3:
+                    errorString = "Unexpected PDU";
+                    break;
+                case 4:
+                    errorString = "Confirmation failed";
+                    break;
+                case 5:
+                    errorString = "Out of resources";
+                    break;
+                case 6:
+                    errorString = "Decryption failed";
+                    break;
+                case 7:
+                    errorString = "Unexpected error";
+                    break;
+                case 8:
+                    errorString = "Cannot assign address";
+                    break;
+                default:
+                    errorString = "Error code not supported";
+                    break;
+            }
+        }
+        return errorString;
+    }
 }

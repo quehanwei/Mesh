@@ -94,9 +94,8 @@ public class MainActivity extends AppCompatActivity {
                         mDeviceMap.put(item.getDevice().getAddress(), item.getDevice());
                         listItems.add(item.getDevice().getAddress());
                         mLstAdapter.notifyDataSetChanged();
-                        findViewById(R.id.loadingPanel).setVisibility(View.GONE);
                     }
-
+                    findViewById(R.id.loadingPanel).setVisibility(View.GONE);
                 }
             });
             findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
