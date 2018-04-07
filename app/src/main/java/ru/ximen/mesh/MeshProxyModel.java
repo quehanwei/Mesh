@@ -1,7 +1,6 @@
 package ru.ximen.mesh;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -25,7 +24,8 @@ public class MeshProxyModel {
     private BluetoothGatt mBluetoothGatt;
     private LocalBroadcastManager mBroadcastManager;
     private List<Byte> mData;
-    private boolean transaction;
+    private boolean transactionRx;
+    private boolean transactionTx;
 
     public MeshProxyModel(Context context, BluetoothGatt gatt) {
         mContext = context;
@@ -39,19 +39,41 @@ public class MeshProxyModel {
     public void send(MeshPDU pdu){
         byte sar = 0;
         byte[] data = pdu.data();
-        MeshService service = BluetoothMesh.getInstance().getService();
+
+        if (pdu instanceof MeshProvisionPDU) sar = (byte) (sar | 3);   // Type of PDU
 
         if (data.length > MeshService.MTU) {
             Log.d(TAG, "Splitting PDU");
+            byte[] partData = new byte[MeshService.MTU];
+            for (int i = 0; i < data.length; i += MeshService.MTU) {
+                if (i == 0) {
+                    sar &= 0x3f;
+                    sar |= 0x40;        // first segment
+                    System.arraycopy(data, i, partData, 0, MeshService.MTU);
+                } else if (data.length - i <= MeshService.MTU) {
+                    sar &= 0x3f;
+                    sar |= 0xC0;        // last segment
+                    byte[] lastData = new byte[data.length - i];
+                    System.arraycopy(data, i, lastData, 0, data.length - i);
+                } else {
+                    sar &= 0x3f;
+                    sar |= 0x80;        // segment
+                    System.arraycopy(data, i, partData, 0, MeshService.MTU);
+                }
+                sendPart(sar, partData);
+            }
         } else {
-            if (pdu instanceof MeshProvisionPDU) sar = 3;   // Type of PDU
+            sendPart(sar, data);
         }
+    }
+
+    private void sendPart(byte sar, byte[] data) {
+        MeshService service = BluetoothMesh.getInstance().getService();
         byte[] params = new byte[data.length + 1];
         params[0] = sar;
         System.arraycopy(data, 0, params, 1, data.length);
-
-        service.writeProvision(params);
         Log.d(TAG, "Sending: " + Arrays.toString(params));
+        service.writeProvision(params);
     }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
@@ -65,21 +87,21 @@ public class MeshProxyModel {
             switch (sar) {
                 case 0:         // complete message
                     mData.clear();
-                    transaction = false;
+                    transactionRx = false;
                     break;
                 case 1:
                     mData.clear();
-                    transaction = true;
+                    transactionRx = true;
                     break;
                 case 2:
-                    transaction = true;
+                    transactionRx = true;
                     break;
                 case 3:
-                    transaction = false;
+                    transactionRx = false;
                     break;
             }
             for (int i = 1; i < data.length; i++) mData.add(data[i]);
-            if (!transaction) {
+            if (!transactionRx) {
                 if (type == 0x03) {      // Provision PDU, ignoring SAR
                     broadcastUpdate(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
                 }

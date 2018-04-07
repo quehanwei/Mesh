@@ -2,6 +2,7 @@ package ru.ximen.mesh;
 
 import android.util.Log;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
@@ -34,6 +35,11 @@ public class MeshProvisionPDU extends MeshPDU {
             case START:
                 mData = new byte[6];    // 5.4.1.3
                 break;
+            case PKEY:
+                mData = new byte[65];    // 5.4.1.4
+                break;
+            case INPUT_COMPLETE:
+                mData = new byte[1];    // 5.4.1.5
         }
         mData[0] = mType;               // 5.4.1
     }
@@ -98,6 +104,16 @@ public class MeshProvisionPDU extends MeshPDU {
 
     public void setAuthSize(byte size) {
         if (mType == START) mData[5] = size;
+    }
+
+    public void setPKeyX(BigInteger x) {
+        byte[] tx = x.toByteArray();
+        System.arraycopy(tx, 0, mData, 1, 32);
+    }
+
+    public void setPKeyY(BigInteger y) {
+        byte[] ty = y.toByteArray();
+        System.arraycopy(ty, 0, mData, 33, 32);
     }
 
     @Override

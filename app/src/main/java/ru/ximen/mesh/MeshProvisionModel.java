@@ -34,6 +34,7 @@ public class MeshProvisionModel {
     private byte mInputOOBAction;
     private MeshProvisionCallback mOOBCallback;
     private String mOOBKey;
+    MeshEC ec;
 
     public interface MeshProvisionCallback {
         void getOOB(MeshOOBCallback oobCallback);
@@ -50,6 +51,7 @@ public class MeshProvisionModel {
         IntentFilter filter = new IntentFilter(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
         mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
+        ec = new MeshEC();
     }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
@@ -143,6 +145,8 @@ public class MeshProvisionModel {
             public void gotOOB(String oob) {
                 Log.d(TAG, "Got OOB Key: " + oob);
                 mOOBKey = oob;
+                PKey();
+                inputComplete();
             }
         });
     }
@@ -182,6 +186,19 @@ public class MeshProvisionModel {
         mProxy.send(pdu);
     }
 
+    private void inputComplete() {
+        Log.d(TAG, "Sending Input Complete PDU");
+        MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.INPUT_COMPLETE);
+        mProxy.send(pdu);
+    }
+
+    private void PKey() {
+        Log.d(TAG, "Sending Public Key PDU");
+        MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.PKEY);
+        pdu.setPKeyX(ec.getPKeyX());
+        pdu.setPKeyY(ec.getPKeyY());
+        mProxy.send(pdu);
+    }
 
     private void cancel() {
         Log.d(TAG, "Provision canceled");
