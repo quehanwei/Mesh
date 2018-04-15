@@ -40,6 +40,9 @@ public class MeshProvisionPDU extends MeshPDU {
                 break;
             case INPUT_COMPLETE:
                 mData = new byte[1];    // 5.4.1.5
+                break;
+            case CONFIRMATION:
+                mData = new byte[17];   // 5.4.1.6
         }
         mData[0] = mType;               // 5.4.1
     }
@@ -108,17 +111,35 @@ public class MeshProvisionPDU extends MeshPDU {
 
     public void setPKeyX(BigInteger x) {
         byte[] tx = x.toByteArray();
-        System.arraycopy(tx, 0, mData, 1, 32);
+        if (tx[0] != 0x00) {
+            System.arraycopy(tx, 0, mData, 1, 32);
+        } else {
+            System.arraycopy(tx, 1, mData, 1, 32);
+        }
     }
 
     public void setPKeyY(BigInteger y) {
         byte[] ty = y.toByteArray();
-        System.arraycopy(ty, 0, mData, 33, 32);
+        if (ty[0] != 0x00) {
+            System.arraycopy(ty, 0, mData, 33, 32);
+        } else {
+            System.arraycopy(ty, 1, mData, 33, 32);
+        }
+    }
+
+    public void setConfirmation(byte[] confirmation) {
+
     }
 
     @Override
     public byte[] data() {
         return mData;
+    }
+
+    public byte[] provisionData() {
+        byte[] data = new byte[mData.length - 1];
+        System.arraycopy(mData, 1, data, 0, data.length);
+        return data;
     }
 
     public byte errorCode() {

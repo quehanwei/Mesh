@@ -21,7 +21,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 public class MeshService extends Service {
-    protected final static int MTU = 20;
+    protected static int MTU = 20;
     private int mConnectionState = STATE_DISCONNECTED;      // Initial connection state
     private final IBinder mBinder = new LocalBinder();      // Service binder for methods access
 
@@ -102,13 +102,21 @@ public class MeshService extends Service {
                     } else {
                         Log.e(TAG, "No provision service found");
                     }
+                    gatt.requestMtu(70);
+                    Log.i(TAG, "Requesting MTU change");
+                    gatt.requestMtu(70);
                     //BluetoothGattCharacteristic proxyCharacteristic = srvProxy.getCharacteristic(BluetoothMesh.MESH_PROXY_DATA_OUT);
                     //gatt.setCharacteristicNotification(proxyCharacteristic, true);
                     //BluetoothGattDescriptor proxyDescriptor = proxyCharacteristic.getDescriptor(BluetoothMesh.CLIENT_CHARACTERISTIC_CONFIG);
                     //proxyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                     //gatt.writeDescriptor(proxyDescriptor);
+                }
 
-
+                @Override
+                public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+                    super.onMtuChanged(gatt, mtu, status);
+                    Log.i(TAG, "MTU is " + mtu);
+                    MTU = mtu;
                 }
             };
 
@@ -128,6 +136,7 @@ public class MeshService extends Service {
 
     protected void writeProvision(byte[] params) {
         BluetoothMesh mesh = BluetoothMesh.getInstance();
+        mProvisionCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         mProvisionCharacteristic.setValue(params);
         mesh.writeCharacteristic(mProvisionCharacteristic);
     }

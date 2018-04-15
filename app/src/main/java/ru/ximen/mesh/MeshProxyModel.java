@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,25 +43,27 @@ public class MeshProxyModel {
 
         if (pdu instanceof MeshProvisionPDU) sar = (byte) (sar | 3);   // Type of PDU
 
-        if (data.length > MeshService.MTU) {
+        if (data.length > MeshService.MTU - 1) {
             Log.d(TAG, "Splitting PDU");
-            byte[] partData = new byte[MeshService.MTU];
-            for (int i = 0; i < data.length; i += MeshService.MTU) {
+            byte[] partData = new byte[MeshService.MTU - 1];
+            for (int i = 0; i < data.length; i += MeshService.MTU - 1) {
                 if (i == 0) {
                     sar &= 0x3f;
                     sar |= 0x40;        // first segment
-                    System.arraycopy(data, i, partData, 0, MeshService.MTU);
-                } else if (data.length - i <= MeshService.MTU) {
+                    System.arraycopy(data, i, partData, 0, MeshService.MTU - 1);
+                    sendPart(sar, partData);
+                } else if (data.length - i <= MeshService.MTU - 1) {
                     sar &= 0x3f;
                     sar |= 0xC0;        // last segment
                     byte[] lastData = new byte[data.length - i];
                     System.arraycopy(data, i, lastData, 0, data.length - i);
+                    sendPart(sar, lastData);
                 } else {
                     sar &= 0x3f;
                     sar |= 0x80;        // segment
-                    System.arraycopy(data, i, partData, 0, MeshService.MTU);
+                    System.arraycopy(data, i, partData, 0, MeshService.MTU - 1);
+                    sendPart(sar, partData);
                 }
-                sendPart(sar, partData);
             }
         } else {
             sendPart(sar, data);
@@ -68,11 +71,16 @@ public class MeshProxyModel {
     }
 
     private void sendPart(byte sar, byte[] data) {
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         MeshService service = BluetoothMesh.getInstance().getService();
         byte[] params = new byte[data.length + 1];
         params[0] = sar;
         System.arraycopy(data, 0, params, 1, data.length);
-        Log.d(TAG, "Sending: " + Arrays.toString(params));
+        Log.d(TAG, "Sending: " + new BigInteger(1, params).toString(16));
         service.writeProvision(params);
     }
 
@@ -81,7 +89,7 @@ public class MeshProxyModel {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
-            Log.d(TAG, "Reconstructing PDU from data " + Arrays.toString(data));
+            Log.d(TAG, "Reconstructing PDU from data " + new BigInteger(1, data).toString(16));
             byte type = (byte) (data[0] & 0x3f);        // 6.3.1
             byte sar = (byte) (data[0] >>> 6);            // 6.3.1
             switch (sar) {

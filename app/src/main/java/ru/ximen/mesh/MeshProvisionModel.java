@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,6 +36,7 @@ public class MeshProvisionModel {
     private byte mInputOOBAction;
     private MeshProvisionCallback mOOBCallback;
     private String mOOBKey;
+    private BigInteger mAuthValue;
     MeshEC ec;
 
     public interface MeshProvisionCallback {
@@ -52,6 +55,10 @@ public class MeshProvisionModel {
         mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
         ec = new MeshEC();
+        mAuthValue = new BigInteger("0");
+        //String test = "test";
+        //Log.d(TAG, Arrays.toString(ec.s1(test.getBytes())));
+
     }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
@@ -70,11 +77,15 @@ public class MeshProvisionModel {
                 mOutputOOBAction = pdu.getOutputOOBAction();
                 mInputOOBSize = pdu.getInputOOBSize();
                 mInputOOBAction = pdu.getInputOOBAction();
+                BigInteger provisionData = new BigInteger(pdu.provisionData());
+                mAuthValue = mAuthValue.or(provisionData);
                 checkCapabilities();
+            } else if (pdu.getType() == MeshProvisionPDU.PKEY) {
+                Log.d(TAG, "Got Public key");
             } else if (pdu.getType() == MeshProvisionPDU.FAILED) {
                 Log.e(TAG, "Got error PDU. Reason: " + pdu.errorString());
             }
-            cancel();
+            //cancel();
         }
     };
 
@@ -82,6 +93,8 @@ public class MeshProvisionModel {
         Log.d(TAG, "Sending invite PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.INVITE);
         mProxy.send(pdu);
+        BigInteger provisionData = new BigInteger(pdu.provisionData());
+        mAuthValue = mAuthValue.or(provisionData);
         mOOBCallback = provisionCallback;
     }
 
@@ -146,7 +159,7 @@ public class MeshProvisionModel {
                 Log.d(TAG, "Got OOB Key: " + oob);
                 mOOBKey = oob;
                 PKey();
-                inputComplete();
+                // inputComplete();     // for input oob only
             }
         });
     }
@@ -183,6 +196,8 @@ public class MeshProvisionModel {
             pdu.setAuthSize((byte) 0);                      // 5.4.1.3
         }
         Log.d(TAG, "START PDU: " + Arrays.toString(pdu.data()));
+        BigInteger provisionData = new BigInteger(pdu.provisionData());
+        mAuthValue = mAuthValue.or(provisionData);
         mProxy.send(pdu);
     }
 
@@ -197,6 +212,26 @@ public class MeshProvisionModel {
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.PKEY);
         pdu.setPKeyX(ec.getPKeyX());
         pdu.setPKeyY(ec.getPKeyY());
+        mAuthValue = mAuthValue.or(ec.getPKeyX());
+        mAuthValue = mAuthValue.or(ec.getPKeyY());
+        mProxy.send(pdu);
+    }
+
+    private void confirmation() {
+        Log.d(TAG, "Sending Confirmation PDU");
+        MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.CONFIRMATION);
+        byte[] authValue = new byte[16];
+        if ((mOutputOOBAction & 16) != 0) {
+            // alphanumeric
+            byte[] bytes = mOOBKey.getBytes();
+            System.arraycopy(bytes, 0, authValue, 0, bytes.length);
+        } else {
+            byte[] bytes = ByteBuffer.allocate(mInputOOBSize).putInt(Integer.parseInt(mOOBKey)).array();
+            System.arraycopy(bytes, 0, authValue, authValue.length - bytes.length, bytes.length);
+        }
+        BigInteger data = new BigInteger(authValue);
+        mAuthValue = mAuthValue.or(data);
+        byte[] confirmationSalt = ec.s1(mAuthValue.toByteArray());
         mProxy.send(pdu);
     }
 
