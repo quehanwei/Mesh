@@ -82,7 +82,8 @@ public class MeshProvisionModel {
                 checkCapabilities();
             } else if (pdu.getType() == MeshProvisionPDU.PKEY) {
                 Log.d(TAG, "Got Public key");
-                
+                ec.setPeerPKey(pdu.getPKeyX(), pdu.getPKeyY());
+
             } else if (pdu.getType() == MeshProvisionPDU.FAILED) {
                 Log.e(TAG, "Got error PDU. Reason: " + pdu.errorString());
             }

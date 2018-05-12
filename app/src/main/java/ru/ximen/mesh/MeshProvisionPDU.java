@@ -118,6 +118,18 @@ public class MeshProvisionPDU extends MeshPDU {
         }
     }
 
+    public BigInteger getPKeyX() {
+        byte[] data = new byte[32];
+        System.arraycopy(mData, 1, data, 0, 32);
+        return new BigInteger(data);
+    }
+
+    public BigInteger getPKeyY() {
+        byte[] data = new byte[32];
+        System.arraycopy(mData, 33, data, 0, 32);
+        return new BigInteger(data);
+    }
+
     public void setPKeyY(BigInteger y) {
         byte[] ty = y.toByteArray();
         if (ty[0] != 0x00) {

@@ -15,14 +15,17 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 
 import javax.crypto.KeyAgreement;
@@ -35,6 +38,7 @@ import javax.crypto.KeyAgreement;
 public class MeshEC {
     final static private String TAG = "MeshEC";
     private KeyPair pair;
+    private PublicKey peerPKey;
 
     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
@@ -65,6 +69,23 @@ public class MeshEC {
 
     BigInteger getPKeyY() {
         return ((ECPublicKey) (pair.getPublic())).getW().getAffineY();
+    }
+
+    void setPeerPKey(BigInteger x, BigInteger y) {
+        ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("P-256");
+        ECPublicKeySpec spec = new ECPublicKeySpec(ecSpec.getCurve().createPoint(x, y), ecSpec);
+        KeyFactory ecKeyFac;
+        try {
+            ecKeyFac = KeyFactory.getInstance("ECDH", "SC");
+            peerPKey = ecKeyFac.generatePublic(spec);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+        Log.d(TAG, "Peer Public Key:" + peerPKey.toString());
     }
 
     byte[] s1(byte[] input) {
