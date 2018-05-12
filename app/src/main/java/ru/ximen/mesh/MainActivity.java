@@ -93,8 +93,10 @@ public class MainActivity extends AppCompatActivity {
                     for (ScanResult item : scanResults) {
                         mDeviceMap.put(item.getDevice().getAddress(), item.getDevice());
                         listItems.add(item.getDevice().getAddress());
-                        mLstAdapter.notifyDataSetChanged();
+                        Log.d(TAG, "Scan result: " + item.getDevice().getAddress());
                     }
+                    mLstAdapter.notifyDataSetChanged();
+
                     findViewById(R.id.loadingPanel).setVisibility(View.GONE);
                 }
             });

@@ -72,7 +72,7 @@ public class MeshProxyModel {
 
     private void sendPart(byte sar, byte[] data) {
         try {
-            Thread.sleep(1500);
+            Thread.sleep(200);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -89,22 +89,25 @@ public class MeshProxyModel {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
-            Log.d(TAG, "Reconstructing PDU from data " + new BigInteger(1, data).toString(16));
             byte type = (byte) (data[0] & 0x3f);        // 6.3.1
             byte sar = (byte) (data[0] >>> 6);            // 6.3.1
             switch (sar) {
                 case 0:         // complete message
+                    Log.d(TAG, "Reconstructing complete PDU from data " + new BigInteger(1, data).toString(16));
                     mData.clear();
                     transactionRx = false;
                     break;
                 case 1:
+                    Log.d(TAG, "Reconstructing first PDU segment from data " + new BigInteger(1, data).toString(16));
                     mData.clear();
                     transactionRx = true;
                     break;
-                case 2:
+                case -2:
+                    Log.d(TAG, "Reconstructing PDU segment from data " + new BigInteger(1, data).toString(16));
                     transactionRx = true;
                     break;
-                case 3:
+                case -1:
+                    Log.d(TAG, "Reconstructing last PDU segment from data " + new BigInteger(1, data).toString(16));
                     transactionRx = false;
                     break;
             }
