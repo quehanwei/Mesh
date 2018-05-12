@@ -43,6 +43,13 @@ public class MeshProvisionPDU extends MeshPDU {
                 break;
             case CONFIRMATION:
                 mData = new byte[17];   // 5.4.1.6
+                break;
+            case RANDOM:
+                mData = new byte[17];   // 5.4.1.6
+                break;
+            case DATA:
+                mData = new byte[34];   // 5.4.1.6
+                break;
         }
         mData[0] = mType;               // 5.4.1
     }
@@ -140,7 +147,7 @@ public class MeshProvisionPDU extends MeshPDU {
     }
 
     public void setConfirmation(byte[] confirmation) {
-
+        System.arraycopy(confirmation, 0, mData, 1, 16);
     }
 
     @Override
@@ -200,4 +207,21 @@ public class MeshProvisionPDU extends MeshPDU {
         }
         return errorString;
     }
+
+    public void setRandom(byte[] randomBytes) {
+        System.arraycopy(randomBytes, 0, mData, 1, 16);
+    }
+
+    public byte[] getConfirmation() {
+        byte[] data = new byte[16];
+        System.arraycopy(mData, 1, data, 0, 16);
+        return data;
+    }
+
+    public byte[] getRandom() {
+        byte[] data = new byte[16];
+        System.arraycopy(mData, 1, data, 0, 16);
+        return data;
+    }
+
 }
