@@ -22,6 +22,9 @@ import android.os.ParcelUuid;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +47,7 @@ public class BluetoothMesh {
     private LocalBroadcastManager mBroadcastManager;
     private boolean mConnected;
     private boolean mBound;
+    private MeshNetwork mNetwork;
 
     final static private String TAG = "BluetoothMesh";
     final static private int DEFAULT_SCAN_TIMEOUT = 10000;
@@ -61,9 +65,9 @@ public class BluetoothMesh {
         }
     };
 
-    public static synchronized BluetoothMesh getInstance(Context context){
+    public static synchronized BluetoothMesh getInstance(Context context, String jsonNetwork) {
         if(null == mInstance){
-            mInstance = new BluetoothMesh(context);
+            mInstance = new BluetoothMesh(context, jsonNetwork);
         }
         return mInstance;
     }
@@ -77,7 +81,7 @@ public class BluetoothMesh {
      *
      * @param context Application context
      */
-    protected BluetoothMesh(Context context){
+    protected BluetoothMesh(Context context, String jsonNetwork) {
         mConnected = false;
         mBound = false;
         mContext = context;
@@ -98,6 +102,11 @@ public class BluetoothMesh {
         provisioner = new MeshProvisionModel(mContext, proxy);
         mBroadcastManager = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManager.registerReceiver(mGattUpdateReceiver, filter);
+        try {
+            mNetwork = new MeshNetwork(mContext, new JSONObject(jsonNetwork));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

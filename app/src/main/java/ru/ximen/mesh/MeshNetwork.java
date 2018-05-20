@@ -6,6 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,7 @@ public class MeshNetwork {
     private byte[] NetKey;
     private short NetKeyIndex;
     private List<MeshDevice> provisioned;
+    final static private String TAG = "MeshNetwork";
 
     public MeshNetwork(Context context, JSONObject json) {
         mContext = context;
@@ -34,12 +36,13 @@ public class MeshNetwork {
         random.nextBytes(NetKey);
         NetKeyIndex = 0;
         provisioned = new ArrayList<>();
+        mNetworkName = name;
     }
 
     private void parseJSON(JSONObject json) {
         try {
             mNetworkName = json.getJSONObject("network").getString("name");
-            NetKey = json.getJSONObject("network").getString("key").getBytes();
+            NetKey = new BigInteger(json.getJSONObject("network").getString("key"), 16).toByteArray();
             NetKeyIndex = (short) json.getJSONObject("network").getInt("keyIndex");
             JSONArray devices = json.getJSONArray("devices");
             for (int i = 0; i < devices.length(); i++)
@@ -72,7 +75,7 @@ public class MeshNetwork {
         JSONArray devices = new JSONArray();
         try {
             network.put("name", mNetworkName);
-            network.put("key", NetKey);
+            network.put("key", new BigInteger(1, NetKey).toString(16));
             network.put("keyIndex", NetKeyIndex);
             for (MeshDevice item : provisioned) devices.put(item.toJSON());
             json.put("network", network);

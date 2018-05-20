@@ -1,6 +1,7 @@
 package ru.ximen.mesh;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,6 +20,7 @@ import java.util.List;
 public class MeshManager {
     private Context mContext;
     private File mDirectory;
+    final static private String TAG = "MeshManager";
 
     public MeshManager(Context mContext, File directory) {
         this.mContext = mContext;
@@ -31,7 +33,9 @@ public class MeshManager {
     public List<String> listNetworks() {
         File[] files = mDirectory.listFiles();
         List<String> filesList = new ArrayList<>();
-        for (File item : files) filesList.add(item.getName());
+        for (File item : files) {
+            filesList.add(item.getName());
+        }
         return filesList;
     }
 
@@ -42,6 +46,7 @@ public class MeshManager {
      * @return MeshNetwork object for newly created network
      */
     public MeshNetwork createNetwork(String name) {
+        Log.d(TAG, "Creating new network: " + name);
         MeshNetwork network = new MeshNetwork(mContext, name);
         save(network.toJSON());
         return network;
@@ -72,12 +77,14 @@ public class MeshManager {
     }
 
     private void save(JSONObject json) {
-        String filename = null;
+        Log.d(TAG, "Saving JSON: " + json.toString());
+        String filename = "";
         try {
             filename = json.getJSONObject("network").getString("name");
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        Log.d(TAG, "Saving Filename: " + filename);
         try {
             FileOutputStream out = new FileOutputStream(mDirectory + "/" + filename);
             out.write(json.toString().getBytes());

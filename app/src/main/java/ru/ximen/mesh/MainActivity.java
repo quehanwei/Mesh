@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.toolbar); // Attaching the layout to the toolbar object
         setSupportActionBar(toolbar);
 
-        mesh = BluetoothMesh.getInstance(getApplicationContext());
+        mesh = BluetoothMesh.getInstance(getApplicationContext(), getIntent().getStringExtra("NETWORK"));
         mDeviceMap = new ArrayMap<>();
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
         });
         mBroadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
+
     }
 
     @Override
