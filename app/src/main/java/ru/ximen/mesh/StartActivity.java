@@ -16,6 +16,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class StartActivity extends AppCompatActivity {
+    private MeshManager manager;
     ArrayAdapter<String> listAdapter;
 
     @Override
@@ -24,6 +25,8 @@ public class StartActivity extends AppCompatActivity {
         setContentView(R.layout.activity_start);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        manager = MeshManager.getInstance(getApplicationContext());
 
         File dir = getFilesDir();
         File[] files = dir.listFiles();
@@ -46,7 +49,7 @@ public class StartActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG).setAction("Action", null).show();
-                
+
             }
         });
     }
