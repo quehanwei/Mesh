@@ -224,4 +224,7 @@ public class MeshProvisionPDU extends MeshPDU {
         return data;
     }
 
+    public void setData(byte[] provisionData) {
+        System.arraycopy(provisionData, 0, mData, 1, 25 + 8);
+    }
 }

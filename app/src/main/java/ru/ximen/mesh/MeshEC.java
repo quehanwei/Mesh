@@ -4,9 +4,14 @@ import android.util.Log;
 
 import org.spongycastle.crypto.BlockCipher;
 import org.spongycastle.crypto.CipherParameters;
+import org.spongycastle.crypto.InvalidCipherTextException;
 import org.spongycastle.crypto.engines.AESEngine;
 import org.spongycastle.crypto.macs.CMac;
+import org.spongycastle.crypto.modes.CCMBlockCipher;
+import org.spongycastle.crypto.params.AEADParameters;
+import org.spongycastle.crypto.params.CCMParameters;
 import org.spongycastle.crypto.params.KeyParameter;
+import org.spongycastle.jcajce.provider.symmetric.AES;
 import org.spongycastle.jce.ECNamedCurveTable;
 import org.spongycastle.jce.spec.ECParameterSpec;
 import org.spongycastle.jce.spec.ECPublicKeySpec;
@@ -25,7 +30,11 @@ import java.security.Security;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.InvalidKeySpecException;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 
 /**
@@ -169,5 +178,42 @@ public class MeshEC {
 
     public byte[] getRandom() {
         return mRandomBytes;
+    }
+
+    public byte[] getProvisionData(byte[] data, byte[] peerRandom) {
+        Log.d(TAG, "Provision data:");
+        Log.d(TAG, " > ConfirmationSalt: " + new BigInteger(mConfirmationSalt).toString(16));
+        Log.d(TAG, " > RandomProvisioner: " + new BigInteger(mRandomBytes).toString(16));
+        Log.d(TAG, " > RandomDevice: " + new BigInteger(peerRandom).toString(16));
+        byte[] saltData = new byte[48];
+        System.arraycopy(mConfirmationSalt, 0, saltData, 0, 16);
+        System.arraycopy(mRandomBytes, 0, saltData, 16, 16);
+        System.arraycopy(peerRandom, 0, saltData, 32, 16);
+        Log.d(TAG, " > ProvisionInputs: " + new BigInteger(saltData).toString(16));
+        byte[] provisionSalt = s1(saltData);
+        Log.d(TAG, " > ProvisionSalt: " + new BigInteger(provisionSalt).toString(16));
+        byte[] sessionKey = k1(secret, provisionSalt, "prsk".getBytes());
+        Log.d(TAG, " > SessionKey: " + new BigInteger(sessionKey).toString(16));
+        byte[] sessionNonce = new byte[13];
+        System.arraycopy(k1(secret, provisionSalt, "prsn".getBytes()), 3, sessionNonce, 0, 13);
+        Log.d(TAG, " > Nonce: " + new BigInteger(sessionNonce).toString(16));
+        Log.d(TAG, " > ProvisionData: " + new BigInteger(data).toString(16));
+
+        CCMBlockCipher cipher = new CCMBlockCipher(new AESEngine());
+        cipher.init(true, new AEADParameters(new KeyParameter(sessionKey), 64, sessionNonce));
+        byte[] outputText = new byte[cipher.getOutputSize(data.length)];
+        int outputLen = cipher.processBytes(data, 0, data.length, data, 0);
+        try {
+            cipher.doFinal(outputText, outputLen);
+        } catch (InvalidCipherTextException e) {
+            e.printStackTrace();
+        }
+        Log.d(TAG, " > EncData: " + new BigInteger(outputText).toString(16));
+        //byte[] mic = cipher.getMac();
+        //Log.d(TAG, " > MIC: " + new BigInteger(mic).toString(16));
+        byte[] out = new byte[25 + 8];
+        System.arraycopy(outputText, 0, out, 0, 25 + 8);
+        //System.arraycopy(mic, 0, out, 25, 8);
+        return out;
     }
 }

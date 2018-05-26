@@ -9,6 +9,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -40,7 +41,8 @@ public class StartActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String item = (String) parent.getItemAtPosition(position);
                 Intent intent = new Intent(StartActivity.this, MainActivity.class);
-                intent.putExtra("NETWORK", item);
+                intent.putExtra("ru.ximen.mesh.NETWORK", item);
+                Log.d("StartActivity", "Network name: " + item);
                 startActivity(intent);
             }
         });
@@ -62,7 +64,8 @@ public class StartActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         MeshNetwork network = ((MeshApplication) getApplication()).getManager().createNetwork(input.getText().toString());
                         Intent intent = new Intent(StartActivity.this, MainActivity.class);
-                        intent.putExtra("ru.ximen.mesh.NETWORK", network.toJSON().toString());
+                        intent.putExtra("ru.ximen.mesh.NETWORK", input.getText().toString());
+                        Log.d("StartActivity", "Network name: " + input.getText().toString());
                         startActivity(intent);
                     }
                 });

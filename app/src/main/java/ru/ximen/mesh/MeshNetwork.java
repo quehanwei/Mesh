@@ -20,6 +20,7 @@ public class MeshNetwork {
     private String mNetworkName;
     private byte[] NetKey;
     private short NetKeyIndex;
+    private int IVIndex;
     private List<MeshDevice> provisioned;
     final static private String TAG = "MeshNetwork";
 
@@ -44,6 +45,7 @@ public class MeshNetwork {
             mNetworkName = json.getJSONObject("network").getString("name");
             NetKey = new BigInteger(json.getJSONObject("network").getString("key"), 16).toByteArray();
             NetKeyIndex = (short) json.getJSONObject("network").getInt("keyIndex");
+            IVIndex = json.getJSONObject("network").getInt("IVIndex");
             JSONArray devices = json.getJSONArray("devices");
             for (int i = 0; i < devices.length(); i++)
                 provisioned.add(new MeshDevice(devices.getJSONObject(i)));
@@ -56,13 +58,21 @@ public class MeshNetwork {
         return NetKey;
     }
 
+    public short getNetKeyIndex() {
+        return NetKeyIndex;
+    }
+
+    public int getIVIndex() {
+        return IVIndex;
+    }
+
     public void addProvisionedDevice(MeshDevice device) {
         provisioned.add(device);
         ((MeshApplication) mContext.getApplicationContext()).getManager().updateNetwork(this);
     }
 
     public short getNextUnicastAddress() {
-        short last = 0;
+        short last = 2;
         for (MeshDevice item : provisioned) {
             if (item.getAddress() - last > 1) return (short) (last + 1);
             last++;
@@ -78,6 +88,7 @@ public class MeshNetwork {
             network.put("name", mNetworkName);
             network.put("key", new BigInteger(1, NetKey).toString(16));
             network.put("keyIndex", NetKeyIndex);
+            network.put("IVIndex", IVIndex);
             for (MeshDevice item : provisioned) devices.put(item.toJSON());
             json.put("network", network);
             json.put("devices", devices);

@@ -36,7 +36,9 @@ public class MeshProvisionModel {
     private MeshProvisionCallback mOOBCallback;
     private String mOOBKey;
     private List<Byte> confirmationInputs;
+    private byte[] peerRandom;
     private byte[] peerConfirmation;
+    private short peerAddress;
     MeshEC ec;
 
     public interface MeshProvisionCallback {
@@ -90,7 +92,8 @@ public class MeshProvisionModel {
                 sendRandom();
             } else if (pdu.getType() == MeshProvisionPDU.RANDOM) {
                 Log.d(TAG, "Got Random");
-                if (peerConfirmation != ec.remoteConfirmation(pdu.getRandom())) {
+                peerRandom = pdu.getRandom();
+                if (peerConfirmation != ec.remoteConfirmation(peerRandom)) {
                     Log.e(TAG, "Confirmation doesn't match!");
                 }
                 sendData();
@@ -105,12 +108,32 @@ public class MeshProvisionModel {
     };
 
     private void provisionComplete() {
-        MeshDevice device = new MeshDevice(BluetoothMesh.getInstance().getDevice(), BluetoothMesh.getInstance().getNetwork().getNextUnicastAddress());
+        MeshDevice device = new MeshDevice(BluetoothMesh.getInstance().getDevice(), peerAddress);
         BluetoothMesh.getInstance().getNetwork().addProvisionedDevice(device);
     }
 
     private void sendData() {
+        MeshNetwork network = BluetoothMesh.getInstance().getNetwork();
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.DATA);
+        byte[] NetworkKey = network.getNetKey();
+        Log.d(TAG, "Network key: " + new BigInteger(1, NetworkKey).toString(16));
+        short KeyIndex = network.getNetKeyIndex();
+        byte Flags = 0;
+        int IVIndex = network.getIVIndex();
+        peerAddress = BluetoothMesh.getInstance().getNetwork().getNextUnicastAddress();
+        Log.d(TAG, "Peer address: " + peerAddress);
+        byte[] data = new byte[25];
+        System.arraycopy(NetworkKey, 0, data, 0, 16);
+        data[16] = (byte) (KeyIndex >>> 8);
+        data[17] = (byte) (KeyIndex & 0x0ff);
+        data[18] = Flags;
+        ByteBuffer b = ByteBuffer.allocate(4);
+        b.putInt(IVIndex);
+        System.arraycopy(b.array(), 0, data, 19, 4);
+        data[23] = (byte) (peerAddress >>> 8);
+        data[24] = (byte) (peerAddress & 0x0ff);
+        pdu.setData(ec.getProvisionData(data, peerRandom));
+        mProxy.send(pdu);
     }
 
     private void sendRandom() {

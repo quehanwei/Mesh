@@ -102,6 +102,7 @@ public class BluetoothMesh {
         provisioner = new MeshProvisionModel(mContext, proxy);
         mBroadcastManager = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManager.registerReceiver(mGattUpdateReceiver, filter);
+        Log.d(TAG, "Network name: " + networkName);
         mNetwork = ((MeshApplication) mContext.getApplicationContext()).getManager().getNetwork(networkName);
     }
 
