@@ -54,7 +54,16 @@ public class MainActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.toolbar); // Attaching the layout to the toolbar object
         setSupportActionBar(toolbar);
 
-        mesh = BluetoothMesh.getInstance(getApplicationContext(), getIntent().getStringExtra("NETWORK"));
+//        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//        if (mBluetoothAdapter == null) {
+//            // Device doesn't support Bluetooth
+//        }
+//        if (!mBluetoothAdapter.isEnabled()) {
+//            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+//        }
+
+        mesh = BluetoothMesh.getInstance(getApplicationContext(), getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
         mDeviceMap = new ArrayMap<>();
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

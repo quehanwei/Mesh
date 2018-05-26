@@ -96,12 +96,18 @@ public class MeshProvisionModel {
                 sendData();
             } else if (pdu.getType() == MeshProvisionPDU.COMPLETE) {
                 Log.d(TAG, "Got Provision complete");
+                provisionComplete();
             } else if (pdu.getType() == MeshProvisionPDU.FAILED) {
                 Log.e(TAG, "Got error PDU. Reason: " + pdu.errorString());
             }
             //cancel();
         }
     };
+
+    private void provisionComplete() {
+        MeshDevice device = new MeshDevice(BluetoothMesh.getInstance().getDevice(), BluetoothMesh.getInstance().getNetwork().getNextUnicastAddress());
+        BluetoothMesh.getInstance().getNetwork().addProvisionedDevice(device);
+    }
 
     private void sendData() {
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.DATA);

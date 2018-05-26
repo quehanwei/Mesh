@@ -81,7 +81,7 @@ public class BluetoothMesh {
      *
      * @param context Application context
      */
-    protected BluetoothMesh(Context context, String jsonNetwork) {
+    protected BluetoothMesh(Context context, String networkName) {
         mConnected = false;
         mBound = false;
         mContext = context;
@@ -102,11 +102,7 @@ public class BluetoothMesh {
         provisioner = new MeshProvisionModel(mContext, proxy);
         mBroadcastManager = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManager.registerReceiver(mGattUpdateReceiver, filter);
-        try {
-            mNetwork = new MeshNetwork(mContext, new JSONObject(jsonNetwork));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        mNetwork = ((MeshApplication) mContext.getApplicationContext()).getManager().getNetwork(networkName);
     }
 
     /**
@@ -215,5 +211,13 @@ public class BluetoothMesh {
         mBroadcastManager.unregisterReceiver(mGattUpdateReceiver);
         provisioner.close();
         proxy.close();
+    }
+
+    public MeshNetwork getNetwork() {
+        return mNetwork;
+    }
+
+    public BluetoothDevice getDevice() {
+        return mBluetoothGatt.getDevice();
     }
 }

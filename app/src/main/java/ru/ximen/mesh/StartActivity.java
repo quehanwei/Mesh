@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class StartActivity extends AppCompatActivity {
-    private MeshManager manager;
+    //private MeshManager manager;
     ArrayAdapter<String> listAdapter;
 
     @Override
@@ -30,10 +30,8 @@ public class StartActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        manager = new MeshManager(getApplicationContext(), getFilesDir());
-
         ArrayList<String> filesList = new ArrayList<>();
-        filesList.addAll(manager.listNetworks());
+        filesList.addAll(((MeshApplication) getApplication()).getManager().listNetworks());
         listAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, filesList);
         ListView lv = findViewById(R.id.listView);
         lv.setAdapter(listAdapter);
@@ -42,7 +40,7 @@ public class StartActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String item = (String) parent.getItemAtPosition(position);
                 Intent intent = new Intent(StartActivity.this, MainActivity.class);
-                intent.putExtra("NETWORK", manager.getNetwork(item).toJSON().toString());
+                intent.putExtra("NETWORK", item);
                 startActivity(intent);
             }
         });
@@ -62,9 +60,9 @@ public class StartActivity extends AppCompatActivity {
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        MeshNetwork network = manager.createNetwork(input.getText().toString());
+                        MeshNetwork network = ((MeshApplication) getApplication()).getManager().createNetwork(input.getText().toString());
                         Intent intent = new Intent(StartActivity.this, MainActivity.class);
-                        intent.putExtra("NETWORK", network.toJSON().toString());
+                        intent.putExtra("ru.ximen.mesh.NETWORK", network.toJSON().toString());
                         startActivity(intent);
                     }
                 });

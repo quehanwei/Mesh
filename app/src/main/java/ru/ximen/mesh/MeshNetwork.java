@@ -56,11 +56,12 @@ public class MeshNetwork {
         return NetKey;
     }
 
-    public short addDevice() {
-        return getNextUnicastAddress();
+    public void addProvisionedDevice(MeshDevice device) {
+        provisioned.add(device);
+        ((MeshApplication) mContext.getApplicationContext()).getManager().updateNetwork(this);
     }
 
-    private short getNextUnicastAddress() {
+    public short getNextUnicastAddress() {
         short last = 0;
         for (MeshDevice item : provisioned) {
             if (item.getAddress() - last > 1) return (short) (last + 1);

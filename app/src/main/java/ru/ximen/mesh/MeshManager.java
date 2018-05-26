@@ -17,7 +17,7 @@ import java.util.List;
  * Created by ximen on 20.05.18.
  */
 
-public class MeshManager {
+public final class MeshManager {
     private Context mContext;
     private File mDirectory;
     final static private String TAG = "MeshManager";
@@ -74,6 +74,15 @@ public class MeshManager {
      */
     public void deleteNetwork(String name) {
 
+    }
+
+    /**
+     * Updates network on disk
+     *
+     * @param network MeshNetwork object representing changed network
+     */
+    public void updateNetwork(MeshNetwork network) {
+        save(network.toJSON());
     }
 
     private void save(JSONObject json) {
