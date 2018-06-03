@@ -2,4 +2,8 @@
     <string name="app_name">Mesh</string>
     <string name="action_scan">Scan</string>
     <string name="title_activity_start">StartActivity</string>
+    <string name="title_activity_network">NetworkActivity</string>
+    <string name="configure">Configure</string>
+    <string name="delete">Delete</string>
+    <string name="unprovision">Unprovision</string>
 </resources>

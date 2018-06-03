@@ -51,6 +51,7 @@ public class MeshEC {
     private byte[] mConfirmationKey;
     byte[] mConfirmation = new byte[16];
     byte[] mAuthValue = new byte[16];
+    byte[] provisionSalt;
 
     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
@@ -190,7 +191,7 @@ public class MeshEC {
         System.arraycopy(mRandomBytes, 0, saltData, 16, 16);
         System.arraycopy(peerRandom, 0, saltData, 32, 16);
         Log.d(TAG, " > ProvisionInputs: " + new BigInteger(saltData).toString(16));
-        byte[] provisionSalt = s1(saltData);
+        provisionSalt = s1(saltData);
         Log.d(TAG, " > ProvisionSalt: " + new BigInteger(provisionSalt).toString(16));
         byte[] sessionKey = k1(secret, provisionSalt, "prsk".getBytes());
         Log.d(TAG, " > SessionKey: " + new BigInteger(sessionKey).toString(16));
@@ -215,5 +216,9 @@ public class MeshEC {
         System.arraycopy(outputText, 0, out, 0, 25 + 8);
         //System.arraycopy(mic, 0, out, 25, 8);
         return out;
+    }
+
+    public byte[] getDeviceKey() {
+        return k1(secret, provisionSalt, "prdk".getBytes());
     }
 }

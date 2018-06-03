@@ -40,7 +40,7 @@ public class StartActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String item = (String) parent.getItemAtPosition(position);
-                Intent intent = new Intent(StartActivity.this, MainActivity.class);
+                Intent intent = new Intent(StartActivity.this, NetworkActivity.class);
                 intent.putExtra("ru.ximen.mesh.NETWORK", item);
                 Log.d("StartActivity", "Network name: " + item);
                 startActivity(intent);

@@ -97,4 +97,13 @@ public class MeshNetwork {
         }
         return json;
     }
+
+    public List<MeshDevice> getDevices() {
+        return provisioned;
+    }
+
+    public void deleteDevice(MeshDevice device) {
+        provisioned.remove(device);
+        ((MeshApplication) mContext.getApplicationContext()).getManager().updateNetwork(this);
+    }
 }

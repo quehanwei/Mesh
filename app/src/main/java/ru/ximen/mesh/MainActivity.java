@@ -1,21 +1,11 @@
 package ru.ximen.mesh;
 
-import android.Manifest;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.le.BluetoothLeScanner;
-import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.os.Handler;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -46,9 +36,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
         final ListView listview = findViewById(R.id.list);
-        mLstAdapter=new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1,
-                listItems);
+        mLstAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listItems);
         listview.setAdapter(mLstAdapter);
 
         toolbar = findViewById(R.id.toolbar); // Attaching the layout to the toolbar object

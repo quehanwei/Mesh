@@ -99,6 +99,7 @@ public class MeshProvisionModel {
                 sendData();
             } else if (pdu.getType() == MeshProvisionPDU.COMPLETE) {
                 Log.d(TAG, "Got Provision complete");
+
                 provisionComplete();
             } else if (pdu.getType() == MeshProvisionPDU.FAILED) {
                 Log.e(TAG, "Got error PDU. Reason: " + pdu.errorString());
@@ -108,7 +109,7 @@ public class MeshProvisionModel {
     };
 
     private void provisionComplete() {
-        MeshDevice device = new MeshDevice(BluetoothMesh.getInstance().getDevice(), peerAddress);
+        MeshDevice device = new MeshDevice(BluetoothMesh.getInstance().getDevice(), peerAddress, ec.getDeviceKey());
         BluetoothMesh.getInstance().getNetwork().addProvisionedDevice(device);
     }
 

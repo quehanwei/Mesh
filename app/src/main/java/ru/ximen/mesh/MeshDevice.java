@@ -16,14 +16,26 @@ import java.util.UUID;
 public class MeshDevice {
     private short mAddress;
     private String mMAC;
+    private String mName;
+    private byte[] mDeviceKey;
+    private UUID mUUID;
+    private BluetoothDevice mBluetoothDevice;
 
-    public MeshDevice(JSONObject jsonObject) {
-
+    public MeshDevice(JSONObject json) {
+        try {
+            mAddress = (short) json.getInt("address");
+            mMAC = json.getString("mac");
+            mName = json.getString("name");
+            mDeviceKey = new BigInteger(json.getString("deviceKey"), 16).toByteArray();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
-    public MeshDevice(BluetoothDevice device, short address) {
+    public MeshDevice(BluetoothDevice device, short address, byte[] deviceKey) {
         mAddress = address;
         mMAC = device.getAddress();
+        mDeviceKey = deviceKey;
     }
 
     public short getAddress() {
@@ -35,9 +47,20 @@ public class MeshDevice {
         try {
             json.put("address", Integer.valueOf(mAddress));
             json.put("mac", mMAC);
+            json.put("deviceKey", mDeviceKey);
+            json.put("name", mName);
         } catch (JSONException e) {
             e.printStackTrace();
         }
         return json;
     }
+
+    public void setName(String name) {
+        this.mName = name;
+    }
+
+    public String getName() {
+        return mName;
+    }
+
 }
