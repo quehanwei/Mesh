@@ -193,8 +193,8 @@ public class BluetoothMesh {
     }
 
     // Provisions unprovisioned device
-    public void provisionDevice(final MeshProvisionModel.MeshProvisionCallback provisionCallback) {
-        provisioner.startProvision(provisionCallback);
+    public void provisionDevice(String name, final MeshProvisionModel.MeshProvisionCallback provisionCallback) {
+        provisioner.startProvision(name, provisionCallback);
     }
 
     protected MeshService getService() {

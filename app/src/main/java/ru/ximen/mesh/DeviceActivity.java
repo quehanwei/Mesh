@@ -24,37 +24,62 @@ public class DeviceActivity extends AppCompatActivity {
     }
 
     public void onProvisionButton(View view) {
-        Log.i(TAG, "Starting provision");
-        mesh.provisionDevice(new MeshProvisionModel.MeshProvisionCallback() {
-            @Override
-            public void getOOB(final MeshProvisionModel.MeshOOBCallback oobCallback) {
-                AlertDialog.Builder alert = new AlertDialog.Builder(DeviceActivity.this);
-                alert.setTitle("Enter Public Key");
-                alert.setMessage("OOB Key:");
+        AlertDialog.Builder alertName = new AlertDialog.Builder(DeviceActivity.this);
+        alertName.setTitle("Enter device name");
+        alertName.setMessage("Name:");
 
-                // Set an EditText view to get user input
-                final EditText input = new EditText(DeviceActivity.this);
-                alert.setView(input);
+        // Set an EditText view to get user input
+        final EditText input = new EditText(DeviceActivity.this);
+        alertName.setView(input);
 
-                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        String value = input.getText().toString();
-                        oobCallback.gotOOB(value);
-                        return;
-                    }
-                });
+        alertName.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                String name = input.getText().toString();
 
-                alert.setNegativeButton("Cancel",
-                        new DialogInterface.OnClickListener() {
+                Log.i(TAG, "Starting provision");
+                mesh.provisionDevice(name, new MeshProvisionModel.MeshProvisionCallback() {
+                    @Override
+                    public void getOOB(final MeshProvisionModel.MeshOOBCallback oobCallback) {
+                        AlertDialog.Builder alert = new AlertDialog.Builder(DeviceActivity.this);
+                        alert.setTitle("Enter Public Key");
+                        alert.setMessage("OOB Key:");
 
-                            public void onClick(DialogInterface dialog, int which) {
-                                // TODO Auto-generated method stub
+                        // Set an EditText view to get user input
+                        final EditText input = new EditText(DeviceActivity.this);
+                        alert.setView(input);
+
+                        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                String value = input.getText().toString();
+                                oobCallback.gotOOB(value);
                                 return;
                             }
                         });
-                alert.show();
+
+                        alert.setNegativeButton("Cancel",
+                                new DialogInterface.OnClickListener() {
+
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        // TODO Auto-generated method stub
+                                        return;
+                                    }
+                                });
+                        alert.show();
+                    }
+                });
+                return;
             }
         });
+
+        alertName.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+
+                    public void onClick(DialogInterface dialog, int which) {
+                        // TODO Auto-generated method stub
+                        return;
+                    }
+                });
+        alertName.show();
     }
 
     public void onUnProvisionButton(View view) {

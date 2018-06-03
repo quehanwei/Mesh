@@ -39,6 +39,7 @@ public class MeshProvisionModel {
     private byte[] peerRandom;
     private byte[] peerConfirmation;
     private short peerAddress;
+    private String mDeviceName;
     MeshEC ec;
 
     public interface MeshProvisionCallback {
@@ -110,6 +111,7 @@ public class MeshProvisionModel {
 
     private void provisionComplete() {
         MeshDevice device = new MeshDevice(BluetoothMesh.getInstance().getDevice(), peerAddress, ec.getDeviceKey());
+        device.setName(mDeviceName);
         BluetoothMesh.getInstance().getNetwork().addProvisionedDevice(device);
     }
 
@@ -143,7 +145,8 @@ public class MeshProvisionModel {
         mProxy.send(pdu);
     }
 
-    public void startProvision(MeshProvisionCallback provisionCallback) {
+    public void startProvision(String name, MeshProvisionCallback provisionCallback) {
+        mDeviceName = name;
         Log.d(TAG, "Sending invite PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.INVITE);
         mProxy.send(pdu);
