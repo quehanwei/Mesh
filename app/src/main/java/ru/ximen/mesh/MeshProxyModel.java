@@ -2,9 +2,12 @@ package ru.ximen.mesh;
 
 import android.bluetooth.BluetoothGatt;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -22,18 +25,18 @@ import static ru.ximen.mesh.MeshService.EXTRA_DATA;
 public class MeshProxyModel {
     private final Context mContext;
     final static private String TAG = "MeshProxy";
-    private BluetoothGatt mBluetoothGatt;
     private LocalBroadcastManager mBroadcastManager;
     private List<Byte> mData;
     private boolean transactionRx;
     private boolean transactionTx;
+    private boolean mBound;
 
-    public MeshProxyModel(Context context, BluetoothGatt gatt) {
+    public MeshProxyModel(Context context) {
         mContext = context;
+        Log.d(TAG, "Binding service");
         IntentFilter filter = new IntentFilter(MeshService.ACTION_PROXY_DATA_AVAILABLE);
         mBroadcastManager = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManager.registerReceiver(mGattUpdateReceiver, filter);
-        mBluetoothGatt = gatt;
         mData = new ArrayList<>();
     }
 
@@ -76,12 +79,11 @@ public class MeshProxyModel {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        MeshService service = BluetoothMesh.getInstance().getService();
         byte[] params = new byte[data.length + 1];
         params[0] = sar;
         System.arraycopy(data, 0, params, 1, data.length);
         Log.d(TAG, "Sending: " + new BigInteger(1, params).toString(16));
-        service.writeProvision(params);
+        ((MeshApplication) mContext.getApplicationContext()).getMeshService().writeProvision(params);
     }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
@@ -133,5 +135,6 @@ public class MeshProxyModel {
     public void close(){
         mBroadcastManager.unregisterReceiver(mGattUpdateReceiver);
     }
+
 }
 

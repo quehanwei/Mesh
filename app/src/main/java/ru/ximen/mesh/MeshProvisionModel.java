@@ -1,5 +1,6 @@
 package ru.ximen.mesh;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -31,25 +32,33 @@ public class MeshProvisionModel {
     private byte mOutputOOBAction;
     private byte mInputOOBSize;
     private byte mInputOOBAction;
-    private MeshProvisionCallback mOOBCallback;
+    private MeshProvisionFinishedOOBCallback mFinishedCallback;
+    private MeshProvisionGetOOBCallback mGetOOBCallback;
+    private MeshProvisionOOBCallback mOOBCallback;
     private String mOOBKey;
     private List<Byte> confirmationInputs;
     private byte[] peerRandom;
     private byte[] peerConfirmation;
     private short peerAddress;
-    private String mDeviceName;
+    private final MeshNetwork mNetwork;
+    private BluetoothDevice mDevice;
     MeshEC ec;
 
-    public interface MeshProvisionCallback {
-        void getOOB(MeshOOBCallback oobCallback);
+
+    public interface MeshProvisionFinishedOOBCallback {
+        void finished(MeshDevice device, MeshNetwork network);
     }
 
-    public interface MeshOOBCallback {
+    public interface MeshProvisionGetOOBCallback {
+        void getOOB(MeshProvisionOOBCallback callback);
+    }
+
+    public interface MeshProvisionOOBCallback {
         void gotOOB(String oob);
     }
 
-
-    public MeshProvisionModel(Context context, MeshProxyModel proxy) {
+    public MeshProvisionModel(Context context, MeshProxyModel proxy, MeshNetwork network) {
+        mNetwork = network;
         mContext = context;
         mProxy = proxy;
         IntentFilter filter = new IntentFilter(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
@@ -110,20 +119,19 @@ public class MeshProvisionModel {
     };
 
     private void provisionComplete() {
-        MeshDevice device = new MeshDevice(BluetoothMesh.getInstance().getDevice(), peerAddress, ec.getDeviceKey());
-        device.setName(mDeviceName);
-        BluetoothMesh.getInstance().getNetwork().addProvisionedDevice(device);
+        MeshDevice device = new MeshDevice(mDevice, peerAddress, ec.getDeviceKey());
+        device.setName(device.getMAC());
+        mFinishedCallback.finished(device, mNetwork);
     }
 
     private void sendData() {
-        MeshNetwork network = BluetoothMesh.getInstance().getNetwork();
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.DATA);
-        byte[] NetworkKey = network.getNetKey();
+        byte[] NetworkKey = mNetwork.getNetKey();
         Log.d(TAG, "Network key: " + Utils.toHexString(NetworkKey));
-        short KeyIndex = network.getNetKeyIndex();
+        short KeyIndex = mNetwork.getNetKeyIndex();
         byte Flags = 0;
-        int IVIndex = network.getIVIndex();
-        peerAddress = BluetoothMesh.getInstance().getNetwork().getNextUnicastAddress();
+        int IVIndex = mNetwork.getIVIndex();
+        peerAddress = mNetwork.getNextUnicastAddress();
         Log.d(TAG, "Peer address: " + peerAddress);
         byte[] data = new byte[25];
         System.arraycopy(NetworkKey, 0, data, 0, 16);
@@ -145,13 +153,14 @@ public class MeshProvisionModel {
         mProxy.send(pdu);
     }
 
-    public void startProvision(String name, MeshProvisionCallback provisionCallback) {
-        mDeviceName = name;
+    public void startProvision(BluetoothDevice device, MeshProvisionGetOOBCallback getOOB, MeshProvisionFinishedOOBCallback finished) {
+        mDevice = device;
+        mFinishedCallback = finished;
+        mGetOOBCallback = getOOB;
         Log.d(TAG, "Invite PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.INVITE);
         mProxy.send(pdu);
         addInput(pdu.provisionData());
-        mOOBCallback = provisionCallback;
     }
 
     public void close() {
@@ -209,7 +218,7 @@ public class MeshProvisionModel {
             Log.d(TAG, "Device Input OOB action: " + action);
         }
         start();
-        mOOBCallback.getOOB(new MeshOOBCallback() {
+        mGetOOBCallback.getOOB(new MeshProvisionOOBCallback() {
             @Override
             public void gotOOB(String oob) {
                 Log.d(TAG, "Got OOB Key: " + oob);

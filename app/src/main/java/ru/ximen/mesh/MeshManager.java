@@ -20,6 +20,7 @@ import java.util.List;
 public final class MeshManager {
     private Context mContext;
     private File mDirectory;
+    private MeshNetwork currentNetwork;
     final static private String TAG = "MeshManager";
 
     public MeshManager(Context mContext, File directory) {
@@ -47,8 +48,9 @@ public final class MeshManager {
      */
     public MeshNetwork createNetwork(String name) {
         Log.d(TAG, "Creating new network: " + name);
-        MeshNetwork network = new MeshNetwork(mContext, name);
+        MeshNetwork network = new MeshNetwork(mContext, this, name);
         save(network.toJSON());
+        currentNetwork = network;
         return network;
     }
 
@@ -58,11 +60,11 @@ public final class MeshManager {
      * @param name Network name to load
      * @return MeshNetwork object for network name. NULL if such network doesn't exists.
      */
-    public MeshNetwork getNetwork(String name) {
+    private MeshNetwork getNetwork(String name) {
         File[] files = mDirectory.listFiles();
         for (File item : files)
             if (item.getName().equals(name)) {
-                return new MeshNetwork(mContext, load(name));
+                return new MeshNetwork(mContext, this, load(name));
             }
         return null;
     }
@@ -77,12 +79,11 @@ public final class MeshManager {
     }
 
     /**
-     * Updates network on disk
+     * Updates currently selected network on disk
      *
-     * @param network MeshNetwork object representing changed network
      */
-    public void updateNetwork(MeshNetwork network) {
-        save(network.toJSON());
+    public void updateNetwork() {
+        save(currentNetwork.toJSON());
     }
 
     private void save(JSONObject json) {
@@ -106,7 +107,7 @@ public final class MeshManager {
         File file = new File(mDirectory, name);
         int length = (int) file.length();
         byte[] bytes = new byte[length];
-        FileInputStream in = null;
+        FileInputStream in;
         try {
             in = new FileInputStream(file);
             in.read(bytes);
@@ -121,7 +122,14 @@ public final class MeshManager {
             e.printStackTrace();
         }
         return json;
-
     }
 
+    public MeshNetwork selectNetowrk(String name) {
+        currentNetwork = getNetwork(name);
+        return currentNetwork;
+    }
+
+    public MeshNetwork getCurrentNetwork() {
+        return currentNetwork;
+    }
 }

@@ -1,18 +1,29 @@
 package ru.ximen.mesh;
 
 import android.app.Service;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.ParcelUuid;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +33,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 public class MeshService extends Service {
     protected static int MTU = 20;
+    final static private int DEFAULT_SCAN_TIMEOUT = 10000;
     private int mConnectionState = STATE_DISCONNECTED;      // Initial connection state
     private final IBinder mBinder = new LocalBinder();      // Service binder for methods access
 
@@ -42,6 +54,7 @@ public class MeshService extends Service {
 
     private BluetoothGattCharacteristic mProvisionCharacteristic;
     private BluetoothGattCharacteristic mProxyCharacteristic;
+    private BluetoothGatt mBluetoothGatt;
     private LocalBroadcastManager mBroadcastManager;
 
     public class LocalBinder extends Binder {
@@ -62,6 +75,7 @@ public class MeshService extends Service {
                             mConnectionState = STATE_CONNECTED;
                             broadcastUpdate(intentAction);
                             Log.i(TAG, "Connected to GATT server.");
+                            mBluetoothGatt.discoverServices();
                         } else if (newState == STATE_DISCONNECTED) {
                             intentAction = ACTION_GATT_DISCONNECTED;
                             mConnectionState = STATE_DISCONNECTED;
@@ -76,7 +90,6 @@ public class MeshService extends Service {
                     if (characteristic.getUuid().equals(MESH_PROXY_DATA_OUT)) {
                         broadcastUpdate(ACTION_PROXY_DATA_AVAILABLE, characteristic);
                     } else if (characteristic.getUuid().equals(MESH_PROVISION_DATA_OUT)) {
-                        //broadcastUpdate(ACTION_PROVISION_DATA_AVAILABLE, characteristic);
                         broadcastUpdate(ACTION_PROXY_DATA_AVAILABLE, characteristic);
                     }
                     Log.d(TAG, "Characteristic " + characteristic.getUuid().toString() + " changed");
@@ -101,15 +114,12 @@ public class MeshService extends Service {
                         mProvisionCharacteristic = srvProvision.getCharacteristic(MESH_PROVISION_DATA_IN);
                     } else {
                         Log.e(TAG, "No provision service found");
+                        disconnect();
+                        return;
                     }
                     gatt.requestMtu(70);
                     Log.i(TAG, "Requesting MTU change");
                     gatt.requestMtu(70);
-                    //BluetoothGattCharacteristic proxyCharacteristic = srvProxy.getCharacteristic(BluetoothMesh.MESH_PROXY_DATA_OUT);
-                    //gatt.setCharacteristicNotification(proxyCharacteristic, true);
-                    //BluetoothGattDescriptor proxyDescriptor = proxyCharacteristic.getDescriptor(BluetoothMesh.CLIENT_CHARACTERISTIC_CONFIG);
-                    //proxyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                    //gatt.writeDescriptor(proxyDescriptor);
                 }
 
                 @Override
@@ -135,14 +145,52 @@ public class MeshService extends Service {
     }
 
     protected void writeProvision(byte[] params) {
-        BluetoothMesh mesh = BluetoothMesh.getInstance();
         mProvisionCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         mProvisionCharacteristic.setValue(params);
-        mesh.writeCharacteristic(mProvisionCharacteristic);
+        writeCharacteristic(mProvisionCharacteristic);
     }
 
-    protected void writeProxy() {
+    public void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
+        mBluetoothGatt.writeCharacteristic(characteristic);
+    }
 
+    public void connect(BluetoothDevice device) {
+        Log.d(TAG, "Connecting device " + device.toString());
+        mBluetoothGatt = device.connectGatt(getApplicationContext(), false, mGattCallback);
+    }
+
+    public void connect(MeshDevice device) {
+        Log.d(TAG, "Connecting device " + device.getName());
+        BluetoothDevice bDevice = ((BluetoothManager) getApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getRemoteDevice(device.getMAC());
+        mBluetoothGatt = bDevice.connectGatt(getApplicationContext(), false, mGattCallback);
+    }
+
+    public void disconnect() {
+        if (mConnectionState == STATE_CONNECTED) {
+            mBluetoothGatt.disconnect();
+        }
+    }
+
+    public void scan(final ScanCallback scanCallback) {
+        final BluetoothLeScanner bluetoothScanner = ((BluetoothManager) getApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getBluetoothLeScanner();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                bluetoothScanner.stopScan(scanCallback);
+            }
+        }, DEFAULT_SCAN_TIMEOUT);
+
+        ScanFilter scanFilter = new ScanFilter.Builder().setServiceUuid(new ParcelUuid(MeshService.MESH_PROVISION_SERVICE)).build();
+        List<ScanFilter> scanFilters = new ArrayList<>();
+        scanFilters.add(scanFilter);
+        ScanSettings scanSettings = new ScanSettings.Builder().build();
+        bluetoothScanner.startScan(scanFilters, scanSettings, scanCallback);
+    }
+
+    public BluetoothDevice getConnectedDevice() {
+        if (mConnectionState == STATE_CONNECTED) {
+            return mBluetoothGatt.getDevice();
+        } else return null;
     }
 
     @Override

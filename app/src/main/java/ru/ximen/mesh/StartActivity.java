@@ -4,20 +4,17 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.Log;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 
-import java.io.File;
 import java.util.ArrayList;
 
 public class StartActivity extends AppCompatActivity {
@@ -28,7 +25,7 @@ public class StartActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         ArrayList<String> filesList = new ArrayList<>();
@@ -63,7 +60,7 @@ public class StartActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         MeshNetwork network = ((MeshApplication) getApplication()).getManager().createNetwork(input.getText().toString());
-                        Intent intent = new Intent(StartActivity.this, MainActivity.class);
+                        Intent intent = new Intent(StartActivity.this, ScanActivity.class);
                         intent.putExtra("ru.ximen.mesh.NETWORK", input.getText().toString());
                         Log.d("StartActivity", "Network name: " + input.getText().toString());
                         startActivity(intent);

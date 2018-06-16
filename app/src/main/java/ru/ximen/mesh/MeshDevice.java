@@ -19,7 +19,7 @@ public class MeshDevice {
     private String mName;
     private byte[] mDeviceKey;
     private UUID mUUID;
-    private BluetoothDevice mBluetoothDevice;
+    //private BluetoothDevice mBluetoothDevice;
 
     public MeshDevice(JSONObject json) {
         try {
@@ -63,4 +63,7 @@ public class MeshDevice {
         return mName;
     }
 
+    public String getMAC() {
+        return mMAC;
+    }
 }

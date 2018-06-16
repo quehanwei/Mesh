@@ -20,7 +20,7 @@
         android:theme="@style/AppTheme">
         <service android:name=".MeshService" />
 
-        <activity android:name=".MainActivity" />
+        <activity android:name=".ScanActivity" />
         <activity android:name=".DeviceActivity" />
         <activity
             android:name=".StartActivity"

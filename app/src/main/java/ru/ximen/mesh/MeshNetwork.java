@@ -1,5 +1,6 @@
 package ru.ximen.mesh;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 
 import org.json.JSONArray;
@@ -22,16 +23,21 @@ public class MeshNetwork {
     private short NetKeyIndex;
     private int IVIndex;
     private List<MeshDevice> provisioned;
+    private MeshManager mManager;
+    private MeshProvisionModel mProvisioner;
+    private MeshProxyModel mProxy;
     final static private String TAG = "MeshNetwork";
 
-    public MeshNetwork(Context context, JSONObject json) {
+    public MeshNetwork(Context context, MeshManager manager, JSONObject json) {
         mContext = context;
+        mManager = manager;
         provisioned = new ArrayList<>();
-
         parseJSON(json);
     }
 
-    public MeshNetwork(Context context, String name) {
+    public MeshNetwork(Context context, MeshManager manager, String name) {
+        mContext = context;
+        mManager = manager;
         NetKey = new byte[16];
         SecureRandom random = new SecureRandom();
         random.nextBytes(NetKey);
@@ -70,10 +76,10 @@ public class MeshNetwork {
         return IVIndex;
     }
 
-    public void addProvisionedDevice(MeshDevice device) {
-        provisioned.add(device);
-        ((MeshApplication) mContext.getApplicationContext()).getManager().updateNetwork(this);
-    }
+    //public void addProvisionedDevice(MeshDevice device) {
+    //    provisioned.add(device);
+    //    mManager.updateNetwork(this);
+    //}
 
     public short getNextUnicastAddress() {
         short last = 2;
@@ -108,6 +114,26 @@ public class MeshNetwork {
 
     public void deleteDevice(MeshDevice device) {
         provisioned.remove(device);
-        ((MeshApplication) mContext.getApplicationContext()).getManager().updateNetwork(this);
+        mManager.updateNetwork();
     }
+
+    // Provisions unprovisioned device
+    public void provisionDevice(BluetoothDevice device,
+                                final String name,
+                                MeshProvisionModel.MeshProvisionGetOOBCallback getOOBCallback,
+                                final MeshProvisionModel.MeshProvisionFinishedOOBCallback finished) {
+        mProxy = new MeshProxyModel(mContext);
+        mProvisioner = new MeshProvisionModel(mContext, mProxy, this);
+        mProvisioner.startProvision(device, getOOBCallback, new MeshProvisionModel.MeshProvisionFinishedOOBCallback() {
+            @Override
+            public void finished(MeshDevice device, MeshNetwork network) {
+                device.setName(name);
+                provisioned.add(device);
+                mManager.updateNetwork();
+                mProvisioner.close();
+                mProxy.close();
+            }
+        });
+    }
+
 }
