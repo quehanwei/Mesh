@@ -7,10 +7,8 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static ru.ximen.mesh.MeshService.EXTRA_DATA;
@@ -82,7 +80,9 @@ public class MeshProvisionModel {
                 addInput(pdu.provisionData());
                 checkCapabilities();
             } else if (pdu.getType() == MeshProvisionPDU.PKEY) {
-                Log.d(TAG, "Got Public key");
+                Log.d(TAG, "Got Public key:");
+                Log.d(TAG, "X: " + Utils.toHexString(pdu.getPKeyX()));
+                Log.d(TAG, "Y: " + Utils.toHexString(pdu.getPKeyY()));
                 ec.setPeerPKey(pdu.getPKeyX(), pdu.getPKeyY());
                 addInput(pdu.provisionData());
                 ec.calculateSecret();
@@ -119,7 +119,7 @@ public class MeshProvisionModel {
         MeshNetwork network = BluetoothMesh.getInstance().getNetwork();
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.DATA);
         byte[] NetworkKey = network.getNetKey();
-        Log.d(TAG, "Network key: " + new BigInteger(1, NetworkKey).toString(16));
+        Log.d(TAG, "Network key: " + Utils.toHexString(NetworkKey));
         short KeyIndex = network.getNetKeyIndex();
         byte Flags = 0;
         int IVIndex = network.getIVIndex();
@@ -147,7 +147,7 @@ public class MeshProvisionModel {
 
     public void startProvision(String name, MeshProvisionCallback provisionCallback) {
         mDeviceName = name;
-        Log.d(TAG, "Sending invite PDU");
+        Log.d(TAG, "Invite PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.INVITE);
         mProxy.send(pdu);
         addInput(pdu.provisionData());
@@ -251,19 +251,19 @@ public class MeshProvisionModel {
             pdu.setAuthAction((byte) 0);                    // 5.4.1.3
             pdu.setAuthSize((byte) 0);                      // 5.4.1.3
         }
-        Log.d(TAG, "START PDU: " + Arrays.toString(pdu.data()));
+        Log.d(TAG, "START PDU: " + Utils.toHexString(pdu.data(), " "));
         addInput(pdu.provisionData());
         mProxy.send(pdu);
     }
 
     private void inputComplete() {
-        Log.d(TAG, "Sending Input Complete PDU");
+        Log.d(TAG, "Input Complete PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.INPUT_COMPLETE);
         mProxy.send(pdu);
     }
 
     private void PKey() {
-        Log.d(TAG, "Sending Public Key PDU");
+        Log.d(TAG, "Public Key PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.PKEY);
         pdu.setPKeyX(ec.getPKeyX());
         pdu.setPKeyY(ec.getPKeyY());
@@ -272,7 +272,7 @@ public class MeshProvisionModel {
     }
 
     private void confirmation() {
-        Log.d(TAG, "Sending Confirmation PDU");
+        Log.d(TAG, "Confirmation PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.CONFIRMATION);
 
         Log.d(TAG, "Confirmation inputs: " + confirmationInputs.toString());
@@ -285,7 +285,7 @@ public class MeshProvisionModel {
             byte[] bytes = ByteBuffer.allocate(mOutputOOBSize).putInt(Integer.parseInt(mOOBKey)).array();
             System.arraycopy(bytes, 0, authValue, authValue.length - bytes.length, bytes.length);
         }
-        Log.d(TAG, "Auth value: " + new BigInteger(authValue).toString(16));
+        Log.d(TAG, "Auth value: " + Utils.toHexString(authValue));
         byte[] inputBytes = new byte[confirmationInputs.size()];
         for (int index = 0; index < confirmationInputs.size(); index++) {
             inputBytes[index] = confirmationInputs.get(index);

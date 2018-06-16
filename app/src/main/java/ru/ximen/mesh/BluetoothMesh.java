@@ -159,7 +159,9 @@ public class BluetoothMesh {
                     //for (ScanResult item : mScanResult)
                     //    if (result.getDevice().equals(item.getDevice())) duplicate = true;
                     //if (!duplicate) {
-                        mScanResult.add(result);
+                    //ParcelUuid mServiceUUID = result.getScanRecord().getServiceUuids().get(0);
+                    //result.getScanRecord().getServiceData(mServiceUUID);
+                    mScanResult.add(result);
                     //}
                 }
             };

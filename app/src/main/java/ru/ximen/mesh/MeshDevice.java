@@ -47,7 +47,7 @@ public class MeshDevice {
         try {
             json.put("address", Integer.valueOf(mAddress));
             json.put("mac", mMAC);
-            json.put("deviceKey", mDeviceKey);
+            json.put("deviceKey", Utils.toHexString(mDeviceKey));
             json.put("name", mName);
         } catch (JSONException e) {
             e.printStackTrace();

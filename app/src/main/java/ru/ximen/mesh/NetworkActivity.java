@@ -1,11 +1,13 @@
 package ru.ximen.mesh;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.ArrayMap;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -18,6 +20,8 @@ public class NetworkActivity extends AppCompatActivity {
     private DeviceListAdapter mLstAdapter;
     private MeshNetwork mNetwork;
 
+    // TODO: Connect to selected network through best RSSI proxy
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -25,16 +29,17 @@ public class NetworkActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        mNetwork = ((MeshApplication) getApplicationContext()).getManager().getNetwork(getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent intent = new Intent(NetworkActivity.this, MainActivity.class);
+                intent.putExtra("ru.ximen.mesh.NETWORK", mNetwork.getName());
+                startActivity(intent);
             }
         });
-
-        mNetwork = ((MeshApplication) getApplicationContext()).getManager().getNetwork(getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
 
         final ListView listview = findViewById(R.id.listView);
 
@@ -55,4 +60,9 @@ public class NetworkActivity extends AppCompatActivity {
         // TODO: Menu to delete network
     }
 
+    @Override
+    protected void onResume() {
+        mLstAdapter.notifyDataSetChanged();
+        super.onResume();
+    }
 }

@@ -49,9 +49,9 @@ public class MeshEC {
     private byte[] mRandomBytes;
     private byte[] mConfirmationSalt;
     private byte[] mConfirmationKey;
-    byte[] mConfirmation = new byte[16];
-    byte[] mAuthValue = new byte[16];
-    byte[] provisionSalt;
+    private byte[] mConfirmation = new byte[16];
+    private byte[] mAuthValue = new byte[16];
+    private byte[] provisionSalt;
 
     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
@@ -62,14 +62,8 @@ public class MeshEC {
         KeyPairGenerator g = null;
         try {
             g = KeyPairGenerator.getInstance("ECDH", "SC");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        }
-        try {
             g.initialize(ecSpec, new SecureRandom());
-        } catch (InvalidAlgorithmParameterException e) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException e) {
             e.printStackTrace();
         }
         pair = g.generateKeyPair();
@@ -84,18 +78,14 @@ public class MeshEC {
         return ((ECPublicKey) (pair.getPublic())).getW().getAffineY();
     }
 
-    void setPeerPKey(BigInteger x, BigInteger y) {
+    void setPeerPKey(byte[] x, byte[] y) {
         ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("P-256");
-        ECPublicKeySpec spec = new ECPublicKeySpec(ecSpec.getCurve().createPoint(x, y), ecSpec);
+        ECPublicKeySpec spec = new ECPublicKeySpec(ecSpec.getCurve().createPoint(new BigInteger(1, x), new BigInteger(1, y)), ecSpec);
         KeyFactory ecKeyFac;
         try {
             ecKeyFac = KeyFactory.getInstance("ECDH", "SC");
             peerPKey = ecKeyFac.generatePublic(spec);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e) {
             e.printStackTrace();
         }
         Log.d(TAG, "Peer Public Key:" + peerPKey.toString());

@@ -3,7 +3,6 @@ package ru.ximen.mesh;
 import android.util.Log;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * Created by ximen on 25.03.18.
@@ -55,7 +54,7 @@ public class MeshProvisionPDU extends MeshPDU {
     }
 
     public MeshProvisionPDU(byte[] data) {
-        Log.d(TAG, "Reconstructing PDU from data " + Arrays.toString(data));
+        Log.d(TAG, "Reconstructing PDU from data [" + Utils.toHexString(data, " ") + "]");
         mData = data;
         mType = mData[0];
     }
@@ -125,16 +124,16 @@ public class MeshProvisionPDU extends MeshPDU {
         }
     }
 
-    public BigInteger getPKeyX() {
+    public byte[] getPKeyX() {
         byte[] data = new byte[32];
         System.arraycopy(mData, 1, data, 0, 32);
-        return new BigInteger(data);
+        return data;
     }
 
-    public BigInteger getPKeyY() {
+    public byte[] getPKeyY() {
         byte[] data = new byte[32];
         System.arraycopy(mData, 33, data, 0, 32);
-        return new BigInteger(data);
+        return data;
     }
 
     public void setPKeyY(BigInteger y) {

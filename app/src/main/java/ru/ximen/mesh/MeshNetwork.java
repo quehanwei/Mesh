@@ -40,6 +40,10 @@ public class MeshNetwork {
         mNetworkName = name;
     }
 
+    public String getName() {
+        return mNetworkName;
+    }
+
     private void parseJSON(JSONObject json) {
         try {
             mNetworkName = json.getJSONObject("network").getString("name");
