@@ -118,6 +118,38 @@ public class MeshEC {
         return result;
     }
 
+    byte[] k2(byte[] N, byte[] P) {
+        byte[] salt = s1("smk2".getBytes());
+        byte[] T = AES_CMAC(N, salt);
+
+        byte[] P1 = new byte[P.length + 1];
+        System.arraycopy(P1, 0, P, 0, P.length);
+        P1[P.length] = 0x01;
+        byte[] T1 = AES_CMAC(P1, T);
+
+        byte[] P2 = new byte[T1.length + P.length + 1];
+        System.arraycopy(P2, 0, T1, 0, T1.length);
+        System.arraycopy(P2, 0, P, T1.length, P.length);
+        P2[T1.length + P.length] = 0x02;
+        byte[] T2 = AES_CMAC(P2, T);
+
+        byte[] P3 = new byte[T2.length + P.length + 1];
+        System.arraycopy(P3, 0, T2, 0, T2.length);
+        System.arraycopy(P3, 0, P, T2.length, P.length);
+        byte[] T3 = AES_CMAC(P3, T);
+
+        // (T1 || T2 || T3) mod 2^263   3.8.2.6
+    }
+
+    private byte[] AES_CMAC(byte[] P, byte[] T) {
+        byte[] R = new byte[16];
+        CMac macT = new CMac(new AESEngine());
+        macT.init(new KeyParameter(T));
+        macT.update(P, 0, P.length);
+        macT.doFinal(R, 0);
+        return R;
+    }
+
     void calculateSecret() {
         ECParameterSpec paramSpec = ECNamedCurveTable.getParameterSpec("P-256");
         try {

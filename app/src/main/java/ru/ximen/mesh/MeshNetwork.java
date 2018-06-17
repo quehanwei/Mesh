@@ -26,6 +26,8 @@ public class MeshNetwork {
     private MeshManager mManager;
     private MeshProvisionModel mProvisioner;
     private MeshProxyModel mProxy;
+    private int SEQ;
+
     final static private String TAG = "MeshNetwork";
 
     public MeshNetwork(Context context, MeshManager manager, JSONObject json) {
@@ -136,4 +138,17 @@ public class MeshNetwork {
         });
     }
 
+    public void sendPDU() {
+
+    }
+
+    private void updateIV() {
+
+    }
+
+    public int getNextSeq() {
+        SEQ++;
+        if (SEQ == 0xFFFFFF) updateIV();
+        return SEQ;
+    }
 }
