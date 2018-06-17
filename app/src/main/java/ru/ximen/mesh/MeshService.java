@@ -33,7 +33,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 public class MeshService extends Service {
     protected static int MTU = 20;
-    final static private int DEFAULT_SCAN_TIMEOUT = 10000;
+    final static public int DEFAULT_SCAN_TIMEOUT = 10000;
     private int mConnectionState = STATE_DISCONNECTED;      // Initial connection state
     private final IBinder mBinder = new LocalBinder();      // Service binder for methods access
 

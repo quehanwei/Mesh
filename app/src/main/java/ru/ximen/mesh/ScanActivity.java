@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -33,11 +34,12 @@ public class ScanActivity extends AppCompatActivity {
     final static private String TAG = "Mesh";
     private LocalBroadcastManager mBroadcastManager;
     private ArrayList<ScanResult> mScanResult;
+    private Menu mScanMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_scan);
         findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
         final ListView listview = findViewById(R.id.list);
         mLstAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listItems);
@@ -64,7 +66,8 @@ public class ScanActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main_menu, menu);
+        getMenuInflater().inflate(R.menu.scan_menu, menu);
+        mScanMenu = menu;
         return true;
     }
 
@@ -87,7 +90,18 @@ public class ScanActivity extends AppCompatActivity {
                     mLstAdapter.notifyDataSetChanged();
                 }
             });
-            //findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+            findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+            mScanMenu.findItem(R.id.action_scan).setTitle(R.string.action_scanning);
+            mScanMenu.findItem(R.id.action_scan).setEnabled(false);
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    findViewById(R.id.loadingPanel).setVisibility(View.GONE);
+                    mScanMenu.findItem(R.id.action_scan).setTitle(R.string.action_scan);
+                    mScanMenu.findItem(R.id.action_scan).setEnabled(true);
+                }
+            }, MeshService.DEFAULT_SCAN_TIMEOUT);
         }
 
         return super.onOptionsItemSelected(item);

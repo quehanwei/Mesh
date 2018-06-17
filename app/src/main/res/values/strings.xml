@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Mesh</string>
     <string name="action_scan">Scan</string>
+    <string name="action_scanning">Scanning</string>
     <string name="title_activity_start">StartActivity</string>
     <string name="title_activity_network">NetworkActivity</string>
     <string name="configure">Configure</string>
