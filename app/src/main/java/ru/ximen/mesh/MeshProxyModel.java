@@ -45,6 +45,7 @@ public class MeshProxyModel {
         byte[] data = pdu.data();
 
         if (pdu instanceof MeshProvisionPDU) sar = (byte) (sar | 3);   // Type of PDU
+        if (pdu instanceof MeshNetworkPDU) sar = (byte) (sar | 0);   // Type of PDU
 
         if (data.length > MeshService.MTU - 1) {
             Log.d(TAG, "Splitting PDU");

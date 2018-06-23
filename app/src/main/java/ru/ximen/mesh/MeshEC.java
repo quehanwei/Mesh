@@ -1,6 +1,7 @@
 package ru.ximen.mesh;
 
 import android.util.Log;
+import android.util.Pair;
 
 import org.spongycastle.crypto.BlockCipher;
 import org.spongycastle.crypto.CipherParameters;
@@ -91,63 +92,85 @@ public class MeshEC {
         Log.d(TAG, "Peer Public Key:" + peerPKey.toString());
     }
 
-    byte[] s1(byte[] input) {
-        byte[] zeros = new byte[16];
-        byte[] result = new byte[16];
-        CipherParameters params = new KeyParameter(zeros);
-        BlockCipher aes = new AESEngine();
-        CMac mac = new CMac(aes);
-        mac.init(params);
-        mac.update(input, 0, input.length);
-        mac.doFinal(result, 0);
-        return result;
+    static byte[] s1(byte[] input) {
+        return AES_CMAC(input, new byte[16]);
     }
 
-    byte[] k1(byte[] N, byte[] salt, byte[] P) {
-        byte[] T = new byte[16];
-        CMac macT = new CMac(new AESEngine());
-        macT.init(new KeyParameter(salt));
-        macT.update(N, 0, N.length);
-        macT.doFinal(T, 0);
-
-        byte[] result = new byte[16];
-        CMac mac = new CMac(new AESEngine());
-        mac.init(new KeyParameter(T));
-        mac.update(P, 0, P.length);
-        mac.doFinal(result, 0);
-        return result;
-    }
-
-    byte[] k2(byte[] N, byte[] P) {
-        byte[] salt = s1("smk2".getBytes());
+    static public byte[] k1(byte[] N, byte[] salt, byte[] P) {
         byte[] T = AES_CMAC(N, salt);
+        byte[] result = AES_CMAC(P, T);
+        return result;
+    }
+
+    static public byte[] k2(byte[] N, byte[] P) {
+        Log.d(TAG, "k2 N:" + Utils.toHexString(N));
+        Log.d(TAG, "k2 P:" + Utils.toHexString(P));
+        byte[] salt = s1("smk2".getBytes());
+        Log.d(TAG, "k2 s1(smk2):" + Utils.toHexString(salt));
+        byte[] T = AES_CMAC(N, salt);
+        Log.d(TAG, "k2 T:" + Utils.toHexString(T));
 
         byte[] P1 = new byte[P.length + 1];
-        System.arraycopy(P1, 0, P, 0, P.length);
+        System.arraycopy(P, 0, P1, 0, P.length);
         P1[P.length] = 0x01;
         byte[] T1 = AES_CMAC(P1, T);
+        Log.d(TAG, "k2 T1:" + Utils.toHexString(T1));
 
         byte[] P2 = new byte[T1.length + P.length + 1];
-        System.arraycopy(P2, 0, T1, 0, T1.length);
-        System.arraycopy(P2, 0, P, T1.length, P.length);
+        System.arraycopy(T1, 0, P2, 0, T1.length);
+        System.arraycopy(P, 0, P2, T1.length, P.length);
         P2[T1.length + P.length] = 0x02;
         byte[] T2 = AES_CMAC(P2, T);
+        Log.d(TAG, "k2 T2:" + Utils.toHexString(T2));
 
         byte[] P3 = new byte[T2.length + P.length + 1];
-        System.arraycopy(P3, 0, T2, 0, T2.length);
-        System.arraycopy(P3, 0, P, T2.length, P.length);
+        System.arraycopy(T2, 0, P3, 0, T2.length);
+        System.arraycopy(P, 0, P3, T2.length, P.length);
+        P3[T2.length + P.length] = 0x03;
         byte[] T3 = AES_CMAC(P3, T);
+        Log.d(TAG, "k2 T3:" + Utils.toHexString(T3));
 
-        // (T1 || T2 || T3) mod 2^263   3.8.2.6
+        byte[] Tres = new byte[T1.length + T2.length + T3.length];
+        System.arraycopy(T1, 0, Tres, 0, T1.length);
+        System.arraycopy(T2, 0, Tres, T1.length, T2.length);
+        System.arraycopy(T3, 0, Tres, T1.length + T2.length, T3.length);
+        BigInteger modulo = new BigInteger("2").pow(263);
+        Log.d(TAG, "k2:" + Utils.toHexString(new BigInteger(Tres).mod(modulo).toByteArray()));
+        return new BigInteger(Tres).mod(modulo).toByteArray();
     }
 
-    private byte[] AES_CMAC(byte[] P, byte[] T) {
+    static private byte[] AES_CMAC(byte[] P, byte[] T) {
         byte[] R = new byte[16];
         CMac macT = new CMac(new AESEngine());
         macT.init(new KeyParameter(T));
         macT.update(P, 0, P.length);
         macT.doFinal(R, 0);
         return R;
+    }
+
+    static public Pair<byte[], byte[]> AES_CCM(byte[] key, byte[] nonce, byte[] data, int macSize) {
+        CCMBlockCipher cipher = new CCMBlockCipher(new AESEngine());
+        cipher.init(true, new AEADParameters(new KeyParameter(key), macSize, nonce));
+        byte[] outputText = new byte[cipher.getOutputSize(data.length)];
+        int outputLen = cipher.processBytes(data, 0, data.length, data, 0);
+        try {
+            cipher.doFinal(outputText, outputLen);
+        } catch (InvalidCipherTextException e) {
+            e.printStackTrace();
+        }
+        byte[] mic = new byte[macSize / 8];
+        byte[] out = new byte[data.length];
+        System.arraycopy(outputText, data.length, mic, 0, macSize / 8);
+        System.arraycopy(outputText, 0, out, 0, data.length);
+        return new Pair<>(out, mic);
+    }
+
+    static public byte[] e(byte[] key, byte[] data) {
+        byte[] out = new byte[16];       // 128 bit
+        AESEngine engine = new AESEngine();
+        engine.init(true, new KeyParameter(key));
+        engine.processBlock(data, 0, out, 0);
+        return out;
     }
 
     void calculateSecret() {
@@ -177,10 +200,7 @@ public class MeshEC {
         System.arraycopy(authValue, 0, randomAuth, 16, 16);
         Log.d(TAG, "Random||AuthValue: " + new BigInteger(randomAuth).toString(16));
 
-        CMac mac = new CMac(new AESEngine());
-        mac.init(new KeyParameter(mConfirmationKey));
-        mac.update(randomAuth, 0, randomAuth.length);
-        mac.doFinal(mConfirmation, 0);
+        mConfirmation = AES_CMAC(randomAuth, mConfirmationKey);
         Log.d(TAG, "Confirmation: " + new BigInteger(mConfirmation).toString(16));
         return mConfirmation;
     }
@@ -191,10 +211,8 @@ public class MeshEC {
         System.arraycopy(mAuthValue, 0, randomAuth, 16, 16);
         Log.d(TAG, "Remote Random||AuthValue: " + new BigInteger(randomAuth).toString(16));
         byte[] confirmation = new byte[16];
-        CMac mac = new CMac(new AESEngine());
-        mac.init(new KeyParameter(mConfirmationKey));
-        mac.update(randomAuth, 0, randomAuth.length);
-        mac.doFinal(confirmation, 0);
+
+        AES_CMAC(randomAuth, mConfirmationKey);
         Log.d(TAG, "Remote confirmation: " + new BigInteger(confirmation).toString(16));
         return confirmation;
     }
@@ -222,21 +240,10 @@ public class MeshEC {
         Log.d(TAG, " > Nonce: " + new BigInteger(sessionNonce).toString(16));
         Log.d(TAG, " > ProvisionData: " + new BigInteger(data).toString(16));
 
-        CCMBlockCipher cipher = new CCMBlockCipher(new AESEngine());
-        cipher.init(true, new AEADParameters(new KeyParameter(sessionKey), 64, sessionNonce));
-        byte[] outputText = new byte[cipher.getOutputSize(data.length)];
-        int outputLen = cipher.processBytes(data, 0, data.length, data, 0);
-        try {
-            cipher.doFinal(outputText, outputLen);
-        } catch (InvalidCipherTextException e) {
-            e.printStackTrace();
-        }
-        Log.d(TAG, " > EncData: " + new BigInteger(outputText).toString(16));
-        //byte[] mic = cipher.getMac();
-        //Log.d(TAG, " > MIC: " + new BigInteger(mic).toString(16));
+        Pair<byte[], byte[]> t = AES_CCM(sessionKey, sessionNonce, data, 64);
         byte[] out = new byte[25 + 8];
-        System.arraycopy(outputText, 0, out, 0, 25 + 8);
-        //System.arraycopy(mic, 0, out, 25, 8);
+        System.arraycopy(t.first, 0, out, 0, 25);
+        System.arraycopy(t.second, 0, out, t.first.length, 8);
         return out;
     }
 

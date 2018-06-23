@@ -2,6 +2,7 @@ package ru.ximen.mesh;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,6 +23,9 @@ public class MeshNetwork {
     private byte[] NetKey;
     private short NetKeyIndex;
     private int IVIndex;
+    private byte mNID;
+    private byte[] mEncryptionKey = new byte[16];
+    private byte[] mPrivacyKey = new byte[16];
     private List<MeshDevice> provisioned;
     private MeshManager mManager;
     private MeshProvisionModel mProvisioner;
@@ -35,17 +39,32 @@ public class MeshNetwork {
         mManager = manager;
         provisioned = new ArrayList<>();
         parseJSON(json);
+
+        byte[] t = MeshEC.k2(NetKey, new byte[1]);
+        mNID = (byte) (t[0] & 0x7F);
+        System.arraycopy(t, 1, mEncryptionKey, 0, 16);
+        System.arraycopy(t, 17, mPrivacyKey, 0, 16);
+        Log.d(TAG, "Encryption key: " + Utils.toHexString(mEncryptionKey));
+        Log.d(TAG, "Privacy key: " + Utils.toHexString(mPrivacyKey));
     }
 
     public MeshNetwork(Context context, MeshManager manager, String name) {
         mContext = context;
         mManager = manager;
+
         NetKey = new byte[16];
         SecureRandom random = new SecureRandom();
         random.nextBytes(NetKey);
         NetKeyIndex = 0;
         provisioned = new ArrayList<>();
         mNetworkName = name;
+
+        byte[] t = MeshEC.k2(NetKey, new byte[1]);
+        mNID = (byte) (t[0] & 0x7F);
+        System.arraycopy(t, 1, mEncryptionKey, 0, 16);
+        System.arraycopy(t, 17, mPrivacyKey, 0, 16);
+        Log.d(TAG, "Encryption key: " + Utils.toHexString(mEncryptionKey));
+        Log.d(TAG, "Privacy key: " + Utils.toHexString(mPrivacyKey));
     }
 
     public String getName() {
@@ -138,8 +157,8 @@ public class MeshNetwork {
         });
     }
 
-    public void sendPDU() {
-
+    public void sendPDU(MeshNetworkPDU pdu) {
+        mProxy.send(pdu);
     }
 
     private void updateIV() {
@@ -150,5 +169,17 @@ public class MeshNetwork {
         SEQ++;
         if (SEQ == 0xFFFFFF) updateIV();
         return SEQ;
+    }
+
+    public byte getNID() {
+        return mNID;
+    }
+
+    public byte[] getPrivacyKey() {
+        return mPrivacyKey;
+    }
+
+    public byte[] getEncryptionKey() {
+        return mEncryptionKey;
     }
 }
