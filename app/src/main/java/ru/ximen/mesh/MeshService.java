@@ -49,6 +49,8 @@ public class MeshService extends Service {
     public final static String ACTION_GATT_DISCONNECTED = "ru.ximen.mesh.le.ACTION_GATT_DISCONNECTED";  // Intent for disconnected event
     public final static String ACTION_PROXY_DATA_AVAILABLE =    "ru.ximen.mesh.le.ACTION_PROXY_DATA_AVAILABLE";     // Intent for new data available
     public final static String ACTION_PROVISION_DATA_AVAILABLE =    "ru.ximen.mesh.le.ACTION_PROVISION_DATA_AVAILABLE";     // Intent for new data available
+    public final static String ACTION_NETWORK_DATA_AVAILABLE = "ru.ximen.mesh.le.ACTION_NETWORK_DATA_AVAILABLE";     // Intent for new data available
+    public final static String ACTION_TRANSPORT_DATA_AVAILABLE = "ru.ximen.mesh.le.ACTION_TRANSPORT_DATA_AVAILABLE";     // Intent for new data available
     public final static String EXTRA_DATA = "ru.ximen.mesh.le.EXTRA_DATA";
     final static private String TAG = "MeshService";
 

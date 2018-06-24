@@ -165,6 +165,15 @@ public class MeshEC {
         return new Pair<>(out, mic);
     }
 
+    static public byte[] AES_CCM_Decrypt(byte[] key, byte[] nonce, byte[] data, int macSize) throws InvalidCipherTextException {
+        CCMBlockCipher cipher = new CCMBlockCipher(new AESEngine());
+        cipher.init(false, new AEADParameters(new KeyParameter(key), macSize, nonce));
+        byte[] outputText = new byte[cipher.getOutputSize(data.length)];
+        int outputLen = cipher.processBytes(data, 0, data.length, data, 0);
+        cipher.doFinal(outputText, outputLen);
+        return outputText;
+    }
+
     static public byte[] e(byte[] key, byte[] data) {
         byte[] out = new byte[16];       // 128 bit
         AESEngine engine = new AESEngine();

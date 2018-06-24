@@ -33,7 +33,13 @@ public class NetworkActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(NetworkActivity.this, ScanActivity.class);
                 intent.putExtra("ru.ximen.mesh.NETWORK", mNetwork.getName());
-                startActivity(intent);
+                //startActivity(intent);
+
+                MeshNetworkPDU pdu = new MeshNetworkPDU(mNetwork, (short) 0x1201, (short) 0xfffd, (byte) 1, (byte) 0);
+                pdu.setTransportPDU(Utils.hexString2Bytes("034b50057e400000010000"));
+                byte[] data = pdu.data();
+                Log.d("Mesh", Utils.toHexString(data));
+                MeshNetworkPDU pdu2 = new MeshNetworkPDU(mNetwork, data);
             }
         });
 

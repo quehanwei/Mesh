@@ -119,6 +119,9 @@ public class MeshProxyModel {
                 if (type == 0x03) {      // Provision PDU, ignoring SAR
                     broadcastUpdate(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
                 }
+                if (type == 0x00) {      // Provision PDU, ignoring SAR
+                    broadcastUpdate(MeshService.ACTION_NETWORK_DATA_AVAILABLE);
+                }
             }
         }
     };
