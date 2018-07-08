@@ -23,15 +23,15 @@ public class MeshNetworkPDU extends MeshPDU {
     private MeshNetwork mNetwork;
     private byte[] mObfuscatedData;
 
-    public MeshNetworkPDU(MeshNetwork network, short SRC, short DST, byte CTL, byte TTL) {
+    public MeshNetworkPDU(MeshNetwork network, int SEQ, short DST, byte CTL, byte TTL) {
         mNetwork = network;
         this.CTL = CTL;
         this.TTL = TTL;
         if (CTL == 0) NetMIC = new byte[4];
         else NetMIC = new byte[8];
-        this.SEQ = network.getNextSeq();
+        this.SEQ = SEQ;
         //this.SEQ = 1;     // for test
-        this.SRC = SRC;
+        this.SRC = network.getAddress();
         this.DST = DST;
         IVI = (byte) (network.getIVIndex() & 0x1);
         Log.d(TAG, "IVI: " + IVI);
@@ -63,7 +63,7 @@ public class MeshNetworkPDU extends MeshPDU {
             SEQ += deObfuscated[3];
             SRC = (short) ((deObfuscated[4] << 8) + deObfuscated[5]);
             getNonce();
-            byte[] transportData = new byte[0];
+            byte[] transportData;
             try {
                 transportData = MeshEC.AES_CCM_Decrypt(mNetwork.getEncryptionKey(), mNonce, transportDataEnc, (CTL == 0) ? 32 : 64);
                 DST = (short) ((transportData[0] << 8) + transportData[1]);
@@ -92,20 +92,19 @@ public class MeshNetworkPDU extends MeshPDU {
         mNonce[4] = (byte) (SEQ & 0xFF);
         mNonce[3] = (byte) ((SEQ >>> 8) & 0xFF);
         mNonce[2] = (byte) (SEQ >>> 16);
-        Log.d(TAG, "SRC: " + SRC);
         mNonce[6] = (byte) (SRC & 0xFF);
         mNonce[5] = (byte) (SRC >>> 8);
         mNonce[7] = 0x00;
         mNonce[8] = 0x00;
         System.arraycopy(ByteBuffer.allocate(4).putInt(mNetwork.getIVIndex()).array(), 0, mNonce, 9, 4);
-        Log.d(TAG, "Network Nonce: " + Utils.toHexString(mNonce));
     }
 
     public boolean isValid() {
         return mValid;
     }
 
-    void setTransportPDU(byte[] pdu) {
+    @Override
+    public void setData(byte[] pdu) {
         byte[] data = new byte[pdu.length + 2];
         data[1] = (byte) (DST & 0xFF);
         data[0] = (byte) (DST >> 8);
@@ -138,8 +137,12 @@ public class MeshNetworkPDU extends MeshPDU {
     }
 
     public byte[] getTransportPDU() {
-        if (isValid()) return transportPDU;
-        else return null;
+        if (isValid()) {
+            return transportPDU;
+        } else {
+            Log.d(TAG, "Not valid PDU");
+            return null;
+        }
     }
 
     @Override
@@ -150,5 +153,13 @@ public class MeshNetworkPDU extends MeshPDU {
         System.arraycopy(transportPDU, 0, data, 1 + mObfuscatedData.length, transportPDU.length);
         System.arraycopy(NetMIC, 0, data, 1 + mObfuscatedData.length + transportPDU.length, NetMIC.length);
         return data;
+    }
+
+    public short getSRC() {
+        return SRC;
+    }
+
+    public int getSEQ() {
+        return SEQ;
     }
 }

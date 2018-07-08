@@ -6,4 +6,6 @@ package ru.ximen.mesh;
 
 public abstract class MeshPDU {
     public abstract byte[] data();
+
+    public abstract void setData(byte[] data);
 }

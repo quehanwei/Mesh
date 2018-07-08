@@ -22,6 +22,8 @@ import static ru.ximen.mesh.MeshService.EXTRA_DATA;
  * Created by ximen on 17.03.18.
  */
 
+// TODO: Proxy Configuration messages
+
 public class MeshProxyModel {
     private final Context mContext;
     final static private String TAG = "MeshProxy";
@@ -84,7 +86,11 @@ public class MeshProxyModel {
         params[0] = sar;
         System.arraycopy(data, 0, params, 1, data.length);
         Log.d(TAG, "Sending: " + new BigInteger(1, params).toString(16));
-        ((MeshApplication) mContext.getApplicationContext()).getMeshService().writeProvision(params);
+        if ((sar & 0x3f) == 3) {
+            ((MeshApplication) mContext.getApplicationContext()).getMeshService().writeProvision(params);
+        } else {
+            ((MeshApplication) mContext.getApplicationContext()).getMeshService().writeProxy(params);
+        }
     }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
@@ -96,31 +102,61 @@ public class MeshProxyModel {
             byte sar = (byte) (data[0] >>> 6);            // 6.3.1
             switch (sar) {
                 case 0:         // complete message
-                    Log.d(TAG, "Reconstructing complete PDU from data " + new BigInteger(1, data).toString(16));
-                    mData.clear();
-                    transactionRx = false;
+                    if (!transactionRx) {
+                        Log.d(TAG, "Reconstructing complete PDU from data " + Utils.toHexString(data));
+                        mData.clear();
+                        transactionRx = false;
+                    } else {
+                        Log.d(TAG, "Complete PDU while waiting segment: " + Utils.toHexString(data));
+                        return;
+                    }
                     break;
                 case 1:
-                    Log.d(TAG, "Reconstructing first PDU segment from data " + new BigInteger(1, data).toString(16));
-                    mData.clear();
-                    transactionRx = true;
+                    if (!transactionRx) {
+                        Log.d(TAG, "Reconstructing first PDU segment from data " + Utils.toHexString(data));
+                        mData.clear();
+                        transactionRx = true;
+                    } else {
+                        Log.d(TAG, "First PDU while waiting segment: " + Utils.toHexString(data));
+                        return;
+                    }
                     break;
                 case -2:
-                    Log.d(TAG, "Reconstructing PDU segment from data " + new BigInteger(1, data).toString(16));
-                    transactionRx = true;
+                    if (transactionRx) {
+                        Log.d(TAG, "Reconstructing PDU segment from data " + Utils.toHexString(data));
+                        transactionRx = true;
+                    } else {
+                        Log.d(TAG, "Segment PDU without first: " + Utils.toHexString(data));
+                        return;
+                    }
                     break;
                 case -1:
-                    Log.d(TAG, "Reconstructing last PDU segment from data " + new BigInteger(1, data).toString(16));
-                    transactionRx = false;
+                    if (transactionRx) {
+                        Log.d(TAG, "Reconstructing last PDU segment from data " + Utils.toHexString(data));
+                        transactionRx = false;
+                    } else {
+                        Log.d(TAG, "Last PDU without first: " + Utils.toHexString(data));
+                        return;
+                    }
                     break;
             }
             for (int i = 1; i < data.length; i++) mData.add(data[i]);
             if (!transactionRx) {
-                if (type == 0x03) {      // Provision PDU, ignoring SAR
-                    broadcastUpdate(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
-                }
-                if (type == 0x00) {      // Provision PDU, ignoring SAR
-                    broadcastUpdate(MeshService.ACTION_NETWORK_DATA_AVAILABLE);
+                switch (type) {
+                    case 0x00:
+                        broadcastUpdate(MeshService.ACTION_NETWORK_DATA_AVAILABLE);
+                        break;
+                    case 0x01:
+                        broadcastUpdate(MeshService.ACTION_MESH_BEACON_DATA_AVAILABLE);
+                        break;
+                    case 0x02:
+                        broadcastUpdate(MeshService.ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE);
+                        break;
+                    case 0x03:
+                        broadcastUpdate(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
+                        break;
+                    default:
+                        Log.d(TAG, "PDU of unknown type received");
                 }
             }
         }

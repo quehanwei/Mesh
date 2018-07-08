@@ -10,11 +10,15 @@ import android.util.Log;
 public class MeshApplication extends Application {
     private MeshManager manager;
     private MeshService mService;
+    private MeshTransportLayer transportLayer;
+    private MeshUpperTransportLayer upperTransportLayer;
 
     @Override
     public void onCreate() {
         super.onCreate();
         manager = new MeshManager(this, getFilesDir());
+        transportLayer = new MeshTransportLayer(this);
+        upperTransportLayer = new MeshUpperTransportLayer(this);
         Intent intent = new Intent(this, MeshService.class);
         if (bindService(intent, mConnection, BIND_AUTO_CREATE)) {
             Log.e("Application", "Error binding service");
@@ -27,6 +31,14 @@ public class MeshApplication extends Application {
 
     public MeshManager getManager() {
         return manager;
+    }
+
+    public MeshTransportLayer getTransportLayer() {
+        return transportLayer;
+    }
+
+    public MeshUpperTransportLayer getUpperTransportLayer() {
+        return upperTransportLayer;
     }
 
     public ServiceConnection mConnection = new ServiceConnection() {

@@ -49,9 +49,15 @@ public class MeshService extends Service {
     public final static String ACTION_GATT_DISCONNECTED = "ru.ximen.mesh.le.ACTION_GATT_DISCONNECTED";  // Intent for disconnected event
     public final static String ACTION_PROXY_DATA_AVAILABLE =    "ru.ximen.mesh.le.ACTION_PROXY_DATA_AVAILABLE";     // Intent for new data available
     public final static String ACTION_PROVISION_DATA_AVAILABLE =    "ru.ximen.mesh.le.ACTION_PROVISION_DATA_AVAILABLE";     // Intent for new data available
+    public final static String ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE = "ru.ximen.mesh.le.ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE";     // Intent for new data available
+    public final static String ACTION_MESH_BEACON_DATA_AVAILABLE = "ru.ximen.mesh.le.ACTION_MESH_BEACON_DATA_AVAILABLE";     // Intent for new data available
     public final static String ACTION_NETWORK_DATA_AVAILABLE = "ru.ximen.mesh.le.ACTION_NETWORK_DATA_AVAILABLE";     // Intent for new data available
     public final static String ACTION_TRANSPORT_DATA_AVAILABLE = "ru.ximen.mesh.le.ACTION_TRANSPORT_DATA_AVAILABLE";     // Intent for new data available
+    public static final String ACTION_UPPER_TRANSPORT_DATA_AVAILABLE = "ru.ximen.mesh.le.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE";     // Intent for new data available
+    public final static String ACTION_APPLICATION_DATA_AVAILABLE = "ru.ximen.mesh.le.ACTION_APPLICATION_DATA_AVAILABLE_";     // Intent for new data available
     public final static String EXTRA_DATA = "ru.ximen.mesh.le.EXTRA_DATA";
+    public final static String EXTRA_ADDR = "ru.ximen.mesh.le.EXTRA_ADDR";
+    public final static String EXTRA_SEQ = "ru.ximen.mesh.le.EXTRA_SEQ";
     final static private String TAG = "MeshService";
 
     private BluetoothGattCharacteristic mProvisionCharacteristic;
@@ -91,19 +97,21 @@ public class MeshService extends Service {
                 public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                     if (characteristic.getUuid().equals(MESH_PROXY_DATA_OUT)) {
                         broadcastUpdate(ACTION_PROXY_DATA_AVAILABLE, characteristic);
+                        Log.d(TAG, "Proxy characteristic changed");
                     } else if (characteristic.getUuid().equals(MESH_PROVISION_DATA_OUT)) {
                         broadcastUpdate(ACTION_PROXY_DATA_AVAILABLE, characteristic);
+                        Log.d(TAG, "Provision characteristic changed");
                     }
-                    Log.d(TAG, "Characteristic " + characteristic.getUuid().toString() + " changed");
+                    //Log.d(TAG, "Characteristic " + characteristic.getUuid().toString() + " changed");
                 }
                 @Override
                 public void onServicesDiscovered(BluetoothGatt gatt, int status) {
                     super.onServicesDiscovered(gatt, status);
                     List<BluetoothGattService> services = gatt.getServices();
                     for (BluetoothGattService service : services){
-                        Log.d(TAG, service.getUuid().toString());
+                        //Log.d(TAG, service.getUuid().toString());
                     }
-                    //BluetoothGattService srvProxy = gatt.getService(BluetoothMesh.MESH_PROXY_SERVICE);
+                    BluetoothGattService srvProxy = gatt.getService(MESH_PROXY_SERVICE);
                     BluetoothGattService srvProvision = gatt.getService(MESH_PROVISION_SERVICE);
                     if(null != srvProvision){
                         // Set characteristic change notification
@@ -114,14 +122,23 @@ public class MeshService extends Service {
                         provDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                         gatt.writeDescriptor(provDescriptor);
                         mProvisionCharacteristic = srvProvision.getCharacteristic(MESH_PROVISION_DATA_IN);
-                    } else {
-                        Log.e(TAG, "No provision service found");
+                    } else if (null == srvProxy) {
+                        Log.e(TAG, "No provision nor proxy service found");
                         disconnect();
                         return;
+                    } else {
+                        // Set characteristic change notification
+                        Log.v(TAG, "Subscribing characteristics notifications");
+                        BluetoothGattCharacteristic proxyCharacteristic = srvProxy.getCharacteristic(MESH_PROXY_DATA_OUT);
+                        gatt.setCharacteristicNotification(proxyCharacteristic, true);
+                        BluetoothGattDescriptor proxyDescriptor = proxyCharacteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
+                        proxyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                        gatt.writeDescriptor(proxyDescriptor);
+                        mProxyCharacteristic = srvProxy.getCharacteristic(MESH_PROXY_DATA_IN);
                     }
-                    gatt.requestMtu(70);
-                    Log.i(TAG, "Requesting MTU change");
-                    gatt.requestMtu(70);
+                    //gatt.requestMtu(70);
+                    //Log.i(TAG, "Requesting MTU change");
+                    //gatt.requestMtu(70);
                 }
 
                 @Override
@@ -150,6 +167,12 @@ public class MeshService extends Service {
         mProvisionCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         mProvisionCharacteristic.setValue(params);
         writeCharacteristic(mProvisionCharacteristic);
+    }
+
+    protected void writeProxy(byte[] params) {
+        mProxyCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        mProxyCharacteristic.setValue(params);
+        writeCharacteristic(mProxyCharacteristic);
     }
 
     public void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
@@ -193,6 +216,10 @@ public class MeshService extends Service {
         if (mConnectionState == STATE_CONNECTED) {
             return mBluetoothGatt.getDevice();
         } else return null;
+    }
+
+    public boolean isConnected() {
+        return (mConnectionState == STATE_CONNECTED);
     }
 
     @Override

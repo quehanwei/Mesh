@@ -19,6 +19,7 @@ public class MeshDevice {
     private String mName;
     private byte[] mDeviceKey;
     private UUID mUUID;
+    private boolean mProxy = true;
     //private BluetoothDevice mBluetoothDevice;
 
     public MeshDevice(JSONObject json) {
@@ -26,7 +27,11 @@ public class MeshDevice {
             mAddress = (short) json.getInt("address");
             mMAC = json.getString("mac");
             mName = json.getString("name");
-            mDeviceKey = new BigInteger(json.getString("deviceKey"), 16).toByteArray();
+            mDeviceKey = Utils.hexString2Bytes(json.getString("deviceKey"));
+            JSONArray features = json.getJSONArray("features");
+            for (int i = 0; i < features.length(); i++) {
+                if (features.getString(i).equals("proxy")) mProxy = true;
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -49,6 +54,9 @@ public class MeshDevice {
             json.put("mac", mMAC);
             json.put("deviceKey", Utils.toHexString(mDeviceKey));
             json.put("name", mName);
+            JSONArray features = new JSONArray();
+            if (isProxy()) features.put("proxy");
+            json.put("features", features);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -65,5 +73,13 @@ public class MeshDevice {
 
     public String getMAC() {
         return mMAC;
+    }
+
+    public byte[] getDeviceKey() {
+        return mDeviceKey;
+    }
+
+    public boolean isProxy() {
+        return mProxy;    // TODO: Replace to configuration result
     }
 }

@@ -80,31 +80,39 @@ public class ScanActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_scan) {
-            ((MeshApplication) getApplicationContext()).getMeshService().scan(new ScanCallback() {
-                @Override
-                public void onScanResult(int callbackType, ScanResult result) {
-                    super.onScanResult(callbackType, result);
-                    mDeviceMap.put(result.getDevice().getAddress(), result.getDevice());
-                    listItems.add(result.getDevice().getAddress());
-                    Log.d(TAG, "Scan result: " + result.getDevice().getAddress());
-                    mLstAdapter.notifyDataSetChanged();
-                }
-            });
-            findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
-            mScanMenu.findItem(R.id.action_scan).setTitle(R.string.action_scanning);
-            mScanMenu.findItem(R.id.action_scan).setEnabled(false);
-
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    findViewById(R.id.loadingPanel).setVisibility(View.GONE);
-                    mScanMenu.findItem(R.id.action_scan).setTitle(R.string.action_scan);
-                    mScanMenu.findItem(R.id.action_scan).setEnabled(true);
-                }
-            }, MeshService.DEFAULT_SCAN_TIMEOUT);
+            scan();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void scan() {
+        ((MeshApplication) getApplicationContext()).getMeshService().scan(new ScanCallback() {
+            @Override
+            public void onScanResult(int callbackType, ScanResult result) {
+                super.onScanResult(callbackType, result);
+                mDeviceMap.put(result.getDevice().getAddress(), result.getDevice());
+                listItems.add(result.getDevice().getAddress());
+                Log.d(TAG, "Scan result: " + result.getDevice().getAddress());
+                mLstAdapter.notifyDataSetChanged();
+            }
+        });
+        findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+        if (null != mScanMenu) {
+            mScanMenu.findItem(R.id.action_scan).setTitle(R.string.action_scanning);
+            mScanMenu.findItem(R.id.action_scan).setEnabled(false);
+        }
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                findViewById(R.id.loadingPanel).setVisibility(View.GONE);
+                if (null != mScanMenu) {
+                    mScanMenu.findItem(R.id.action_scan).setTitle(R.string.action_scan);
+                    mScanMenu.findItem(R.id.action_scan).setEnabled(true);
+                }
+            }
+        }, MeshService.DEFAULT_SCAN_TIMEOUT);
     }
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -165,7 +173,7 @@ public class ScanActivity extends AppCompatActivity {
                                         }, new MeshProvisionModel.MeshProvisionFinishedOOBCallback() {
                                             @Override
                                             public void finished(MeshDevice device, MeshNetwork network) {
-
+                                                finish();
                                             }
                                         });
                         return;
@@ -202,6 +210,7 @@ public class ScanActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        ((MeshApplication) getApplicationContext()).getMeshService().disconnect();
     }
 
     /*@Override

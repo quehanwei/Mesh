@@ -3,6 +3,7 @@ package ru.ximen.mesh;
 import android.content.Context;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.PopupMenu;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DeviceListAdapter extends BaseAdapter {
+    final static private String TAG = "MeshAdapter";
     private final Context mContext;
     private final MeshNetwork mNetwork;
     private final LayoutInflater mInflater;
@@ -65,7 +67,17 @@ public class DeviceListAdapter extends BaseAdapter {
                     public boolean onMenuItemClick(MenuItem item) {
                         switch (item.getItemId()) {
                             case R.id.configure:
-                                Snackbar.make(rowView, "Not implemented yet", Snackbar.LENGTH_LONG).setAction("Action", null).show();
+                                //Snackbar.make(rowView, "Not implemented yet", Snackbar.LENGTH_LONG).setAction("Action", null).show();
+                                MeshConfigurationClient conf = new MeshConfigurationClient((MeshApplication) (rowView.getContext().getApplicationContext()), getItem(position).getAddress());
+                                //MeshOnOffClient conf = new MeshOnOffClient((MeshApplication)(rowView.getContext().getApplicationContext()), getItem(position).getAddress());
+                                ((MeshGATTProxyProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("GATTProxy"))).setStatusListner(new MeshProcedure.MeshMessageCallback() {
+                                    @Override
+                                    public void status(MeshStatusResult result) {
+                                        Log.d(TAG, "Got result: " + Utils.toHexString(result.getData()));
+                                        Snackbar.make(rowView, "GATT Proxy status: " + Utils.toHexString(result.getData()), Snackbar.LENGTH_LONG).setAction("Action", null).show();
+                                    }
+                                });
+                                ((MeshGATTProxyProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("GATTProxy"))).get();
                                 break;
                             case R.id.delete:
                                 mNetwork.deleteDevice(getItem(position));

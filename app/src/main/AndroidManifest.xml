@@ -21,7 +21,6 @@
         <service android:name=".MeshService" />
 
         <activity android:name=".ScanActivity" />
-        <activity android:name=".DeviceActivity" />
         <activity
             android:name=".StartActivity"
             android:label="@string/title_activity_start"

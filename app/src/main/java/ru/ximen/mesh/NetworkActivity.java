@@ -1,5 +1,8 @@
 package ru.ximen.mesh;
 
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -33,13 +36,13 @@ public class NetworkActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(NetworkActivity.this, ScanActivity.class);
                 intent.putExtra("ru.ximen.mesh.NETWORK", mNetwork.getName());
-                //startActivity(intent);
+                startActivity(intent);
 
-                MeshNetworkPDU pdu = new MeshNetworkPDU(mNetwork, (short) 0x1201, (short) 0xfffd, (byte) 1, (byte) 0);
-                pdu.setTransportPDU(Utils.hexString2Bytes("034b50057e400000010000"));
-                byte[] data = pdu.data();
-                Log.d("Mesh", Utils.toHexString(data));
-                MeshNetworkPDU pdu2 = new MeshNetworkPDU(mNetwork, data);
+//                MeshNetworkPDU pdu = new MeshNetworkPDU(mNetwork, (short) 0xfffd, (byte) 1, (byte) 0);
+//                pdu.setData(Utils.hexString2Bytes("034b50057e400000010000"));
+//                byte[] data = pdu.data();
+//                Log.d("Mesh", Utils.toHexString(data));
+//                MeshNetworkPDU pdu2 = new MeshNetworkPDU(mNetwork, data);
             }
         });
 
@@ -66,5 +69,29 @@ public class NetworkActivity extends AppCompatActivity {
     protected void onResume() {
         mLstAdapter.notifyDataSetChanged();
         super.onResume();
+    }
+
+    @Override
+    protected void onStart() {
+        if (!((MeshApplication) getApplicationContext()).getMeshService().isConnected()) {
+            Toast.makeText(this, "Connecting to network " + mNetwork.getName(), Toast.LENGTH_SHORT).show();
+            if (mNetwork.getDevices().size() > 0)
+                ((MeshApplication) getApplicationContext()).getMeshService().connect(findProxy());
+        }
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        //((MeshApplication) getApplicationContext()).getMeshService().disconnect();
+        super.onStop();
+    }
+
+    private MeshDevice findProxy() {
+        for (MeshDevice device : mNetwork.getDevices()) {
+            if (device.isProxy()) return device;
+            //BluetoothDevice bDevice = ((BluetoothManager) getApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getRemoteDevice(device.getMAC());
+        }
+        return null;
     }
 }

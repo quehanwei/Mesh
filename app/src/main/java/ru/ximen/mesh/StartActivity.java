@@ -61,7 +61,7 @@ public class StartActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         MeshNetwork network = ((MeshApplication) getApplication()).getManager().createNetwork(input.getText().toString());
-                        Intent intent = new Intent(StartActivity.this, ScanActivity.class);
+                        Intent intent = new Intent(StartActivity.this, NetworkActivity.class);
                         intent.putExtra("ru.ximen.mesh.NETWORK", input.getText().toString());
                         Log.d("StartActivity", "Network name: " + input.getText().toString());
                         startActivity(intent);
