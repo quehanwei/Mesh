@@ -52,19 +52,19 @@ public class MeshTransportLayer {
                 Log.d(TAG, "Uncomplete PDU: " + Utils.toHexString(pdu.data()));
                 ArrayList<MeshTransportPDU> set = receiveQueue.get(addr);
                 if (null == set) {
-                    Log.d(TAG, "Creating new queue for " + addr);
+                    //Log.d(TAG, "Creating new queue for " + addr);
                     set = new ArrayList<>();
                     receiveQueue.put(addr, set);
                 }
                 set.add(pdu.getSegO(), pdu);
-                Log.d(TAG, "Adding incomplete pdu to index " + pdu.getSegO());
+                //Log.d(TAG, "Adding incomplete pdu to index " + pdu.getSegO());
                 if (pdu.isLast()) processQueued(addr, pdu.getSegN());
             }
         }
     };
 
     private void processQueued(short addr, byte SegN) {
-        Log.d(TAG, "Processing queue for " + addr + " and SegN " + SegN);
+        //Log.d(TAG, "Processing queue for " + addr + " and SegN " + SegN);
         ArrayList<MeshTransportPDU> set = receiveQueue.get(addr);
         MeshTransportPDU tpdu = set.get(SegN);
         tpdu = new MeshTransportPDU(tpdu.getSEQ() - SegN, tpdu.getAKF(), tpdu.getAID(), addr, (short) (tpdu.getSEQ() - SegN), tpdu.getSegN(), tpdu.getSegN(), tpdu.getSZMIC());
@@ -74,12 +74,12 @@ public class MeshTransportLayer {
         for (int i = 0; i < set.size(); i++) {
             if (i > set.get(i).getSegO()) continue;
             byte[] tdata = set.get(i).getAccessData();
-            Log.d(TAG, "tdata: " + Utils.toHexString(tdata));
+            //Log.d(TAG, "tdata: " + Utils.toHexString(tdata));
             byte[] tresult = new byte[result.length + tdata.length];
             System.arraycopy(result, 0, tresult, 0, result.length);
             System.arraycopy(tdata, 0, tresult, result.length, tdata.length);
             result = tresult;
-            Log.d(TAG, "result: " + Utils.toHexString(result));
+            //Log.d(TAG, "result: " + Utils.toHexString(result));
             ack += 1 << set.get(i).getSegO();
         }
         sendAck((short) tpdu.getSEQ(), addr, ack);

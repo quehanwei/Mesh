@@ -11,6 +11,7 @@ public class MeshConfigurationModel extends MeshModel {
         addProcedure(new MeshSecureNetworkBeaconProc(this));
         addProcedure(new MeshGATTProxyProc(this));
         addProcedure(new MeshCompositionDataProc(this));
+        addProcedure(new MeshRelayProc(this));
     }
 
 }

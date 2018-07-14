@@ -38,7 +38,6 @@ public class MeshUpperTransportLayer {
             byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
             short addr = intent.getShortExtra(EXTRA_ADDR, (short) 0);
             int SEQ = intent.getIntExtra(EXTRA_SEQ, 0);
-            Log.d(TAG, "Data1: " + Utils.toHexString(data));
             MeshTransportPDU tpdu = new MeshTransportPDU(data, SEQ);
             MeshUpperTransportPDU pdu = new MeshUpperTransportPDU(tpdu);
             byte[] encData = pdu.data();
@@ -54,12 +53,12 @@ public class MeshUpperTransportLayer {
                 } catch (InvalidCipherTextException e) {
                     e.printStackTrace();
                 }
-                Log.d(TAG, "Decrypted Data: " + Utils.toHexString(unencData));
+                //Log.d(TAG, "Decrypted Data: " + Utils.toHexString(unencData));
                 byte[] opcode = getOpcode(unencData);
-                Log.d(TAG, "Opcode: " + Utils.toHexString(opcode));
+                //Log.d(TAG, "Opcode: " + Utils.toHexString(opcode));
                 byte[] accessData = new byte[unencData.length - opcode.length];
                 System.arraycopy(unencData, opcode.length, accessData, 0, accessData.length);
-                Log.d(TAG, "Data: " + Utils.toHexString(accessData));
+                //Log.d(TAG, "Data: " + Utils.toHexString(accessData));
 
                 MeshProcedure.MeshMessageCallback callback = callbackHashMap.get(callbackKey(opcode, addr));
 

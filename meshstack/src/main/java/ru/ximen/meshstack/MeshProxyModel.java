@@ -98,30 +98,30 @@ public class MeshProxyModel {
             switch (sar) {
                 case 0:         // complete message
                     if (!transactionRx) {
-                        Log.d(TAG, "Reconstructing complete PDU from data " + Utils.toHexString(data));
+                        //Log.d(TAG, "Reconstructing complete PDU from data " + Utils.toHexString(data));
                         mData.clear();
                         transactionRx = false;
                     } else {
-                        Log.d(TAG, "Complete PDU while waiting segment: " + Utils.toHexString(data));
+                        //Log.d(TAG, "Complete PDU while waiting segment: " + Utils.toHexString(data));
                         return;
                     }
                     break;
                 case 1:
                     if (!transactionRx) {
-                        Log.d(TAG, "Reconstructing first PDU segment from data " + Utils.toHexString(data));
+                        //Log.d(TAG, "Reconstructing first PDU segment from data " + Utils.toHexString(data));
                         mData.clear();
                         transactionRx = true;
                     } else {
-                        Log.d(TAG, "First PDU while waiting segment: " + Utils.toHexString(data));
+                        //Log.d(TAG, "First PDU while waiting segment: " + Utils.toHexString(data));
                         return;
                     }
                     break;
                 case -2:
                     if (transactionRx) {
-                        Log.d(TAG, "Reconstructing PDU segment from data " + Utils.toHexString(data));
+                        //Log.d(TAG, "Reconstructing PDU segment from data " + Utils.toHexString(data));
                         transactionRx = true;
                     } else {
-                        Log.d(TAG, "Segment PDU without first: " + Utils.toHexString(data));
+                        //Log.d(TAG, "Segment PDU without first: " + Utils.toHexString(data));
                         return;
                     }
                     break;
