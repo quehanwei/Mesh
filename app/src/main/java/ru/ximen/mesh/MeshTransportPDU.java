@@ -16,7 +16,7 @@ public class MeshTransportPDU extends MeshPDU {
     private short DST;
 
     // Constructor for segmented PDUs
-    public MeshTransportPDU(int SEQ, boolean AKF, byte AID, short SeqZero, byte SegO, byte SegN, short DST) {
+    public MeshTransportPDU(int SEQ, boolean AKF, byte AID, short DST, short SeqZero, byte SegO, byte SegN) {
         this.SEQ = SEQ;
         this.AKF = AKF;
         this.AID = AID;
