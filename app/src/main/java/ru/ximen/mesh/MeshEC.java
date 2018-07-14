@@ -190,6 +190,11 @@ public class MeshEC {
     }
 
     static public byte[] AES_CCM_Decrypt(byte[] key, byte[] nonce, byte[] data, int macSize) throws InvalidCipherTextException {
+        Log.d(TAG, "Decrypting...");
+        Log.d(TAG, "Key: " + Utils.toHexString(key));
+        Log.d(TAG, "Nonce: " + Utils.toHexString(nonce));
+        Log.d(TAG, "Data: " + Utils.toHexString(data));
+        Log.d(TAG, "MacSize: " + macSize);
         CCMBlockCipher cipher = new CCMBlockCipher(new AESEngine());
         cipher.init(false, new AEADParameters(new KeyParameter(key), macSize, nonce));
         byte[] outputText = new byte[cipher.getOutputSize(data.length)];

@@ -67,17 +67,15 @@ public class DeviceListAdapter extends BaseAdapter {
                     public boolean onMenuItemClick(MenuItem item) {
                         switch (item.getItemId()) {
                             case R.id.configure:
-                                //Snackbar.make(rowView, "Not implemented yet", Snackbar.LENGTH_LONG).setAction("Action", null).show();
                                 MeshConfigurationClient conf = new MeshConfigurationClient((MeshApplication) (rowView.getContext().getApplicationContext()), getItem(position).getAddress());
-                                //MeshOnOffClient conf = new MeshOnOffClient((MeshApplication)(rowView.getContext().getApplicationContext()), getItem(position).getAddress());
-                                ((MeshGATTProxyProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("GATTProxy"))).setStatusListner(new MeshProcedure.MeshMessageCallback() {
+                                ((MeshCompositionDataProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("CompositionData"))).setStatusListner(new MeshProcedure.MeshMessageCallback() {
                                     @Override
                                     public void status(MeshStatusResult result) {
                                         Log.d(TAG, "Got result: " + Utils.toHexString(result.getData()));
-                                        Snackbar.make(rowView, "GATT Proxy status: " + Utils.toHexString(result.getData()), Snackbar.LENGTH_LONG).setAction("Action", null).show();
+                                        Snackbar.make(rowView, "CompositionData: " + Utils.toHexString(result.getData()), Snackbar.LENGTH_LONG).setAction("Action", null).show();
                                     }
                                 });
-                                ((MeshGATTProxyProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("GATTProxy"))).get();
+                                ((MeshCompositionDataProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("CompositionData"))).get((byte) 0);
                                 break;
                             case R.id.delete:
                                 mNetwork.deleteDevice(getItem(position));

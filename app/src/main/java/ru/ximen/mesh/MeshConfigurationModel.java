@@ -11,6 +11,7 @@ public class MeshConfigurationModel extends MeshModel {
         Log.d(TAG, "Creating configuration model for destination " + destination);
         addProcedure(new MeshSecureNetworkBeaconProc(this));
         addProcedure(new MeshGATTProxyProc(this));
+        addProcedure(new MeshCompositionDataProc(this));
     }
 
 }

@@ -7,7 +7,15 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import org.spongycastle.pqc.math.ntru.util.Util;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.Vector;
 
 import static ru.ximen.mesh.MeshService.EXTRA_ADDR;
 import static ru.ximen.mesh.MeshService.EXTRA_DATA;
@@ -18,12 +26,12 @@ public class MeshTransportLayer {
     private byte defaultTTL = 20;
     private MeshApplication mContext;
     private LocalBroadcastManager mBroadcastManger;
-    private LinkedHashMap<Short, MeshTransportPDU> sendQueue;
-    private LinkedHashMap<Short, MeshTransportPDU> receiveQueue;
+    //private HashSet<Short, MeshTransportPDU> sendQueue;
+    private HashMap<Short, ArrayList<MeshTransportPDU>> receiveQueue;
 
     public MeshTransportLayer(MeshApplication context) {
         mContext = context;
-
+        receiveQueue = new HashMap<>();
         IntentFilter filter = new IntentFilter(MeshService.ACTION_TRANSPORT_DATA_AVAILABLE);
         mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
@@ -47,14 +55,48 @@ public class MeshTransportLayer {
                 mBroadcastManger.sendBroadcast(newIntent);
             } else {
                 Log.d(TAG, "Uncomplete PDU: " + Utils.toHexString(pdu.data()));
-                if (pdu.isLast()) processQueued();
-                else receiveQueue.put(addr, pdu);
+                ArrayList<MeshTransportPDU> set = receiveQueue.get(addr);
+                if (null == set) {
+                    Log.d(TAG, "Creating new queue for " + addr);
+                    set = new ArrayList<>();
+                    receiveQueue.put(addr, set);
+                }
+                set.add(pdu.getSegO(), pdu);
+                Log.d(TAG, "Adding uncomplete pdu ");
+                if (pdu.isLast()) processQueued(addr, pdu.getSegN());
+                // ToDo: Ack
             }
         }
     };
 
-    private void processQueued() {
+    private void processQueued(short addr, byte SegN) {
         // Todo: Assemble Upper Transport PDU and broadcast access data intent
+        Log.d(TAG, "Processing queue for " + addr + " and SegN " + SegN);
+        ArrayList<MeshTransportPDU> set = receiveQueue.get(addr);
+        MeshTransportPDU tpdu = set.get(SegN);
+        Log.d(TAG, "Last PDU: " + Utils.toHexString(tpdu.data()));
+        tpdu = new MeshTransportPDU(tpdu.getSEQ() - SegN, tpdu.getAKF(), tpdu.getAID(), addr, (short) (tpdu.getSEQ() - SegN), tpdu.getSegN(), tpdu.getSegN(), tpdu.getSZMIC());
+        tpdu.setData(new byte[0]);
+        Log.d(TAG, "New PDU: " + Utils.toHexString(tpdu.data()));
+        byte[] result = new byte[0];
+        for (int i = 0; i < set.size(); i++) {
+            byte[] tdata = set.get(i).getAccessData();
+            Log.d(TAG, "tdata: " + Utils.toHexString(tdata));
+            byte[] tresult = new byte[result.length + tdata.length];
+            System.arraycopy(result, 0, tresult, 0, result.length);
+            System.arraycopy(tdata, 0, tresult, result.length, tdata.length);
+            result = tresult;
+            Log.d(TAG, "result: " + Utils.toHexString(result));
+        }
+        set.clear();
+        tpdu.setData(result);
+        Log.d(TAG, "Big PDU: " + Utils.toHexString(tpdu.data()));
+
+        final Intent newIntent = new Intent(MeshService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
+        newIntent.putExtra(EXTRA_DATA, tpdu.data());
+        newIntent.putExtra(EXTRA_ADDR, addr);
+        newIntent.putExtra(EXTRA_SEQ, tpdu.getSEQ());
+        mBroadcastManger.sendBroadcast(newIntent);
     }
 
     public void send(MeshUpperTransportPDU pdu) {
@@ -66,7 +108,7 @@ public class MeshTransportLayer {
                 if (i > 0) SEQ = mContext.getManager().getCurrentNetwork().getNextSeq();
                 byte[] segmentData = new byte[((data.length - i) > 12) ? 12 : (data.length - 1)];
                 System.arraycopy(data, i, segmentData, 0, segmentData.length);
-                MeshTransportPDU tpdu = new MeshTransportPDU(SEQ, pdu.getAKF(), pdu.getAID(), pdu.getDST(), SeqZero, (byte) (i / 12), (byte) Math.ceil(data.length / 12));
+                MeshTransportPDU tpdu = new MeshTransportPDU(SEQ, pdu.getAKF(), pdu.getAID(), pdu.getDST(), SeqZero, (byte) (i / 12), (byte) Math.ceil(data.length / 12), false);
                 tpdu.setData(segmentData);
                 MeshNetworkPDU npdu = new MeshNetworkPDU(mContext.getManager().getCurrentNetwork(), SEQ, tpdu.getDST(), (byte) 0, defaultTTL); // CTL = 0, only access messages
                 npdu.setData(tpdu.data());

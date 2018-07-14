@@ -8,6 +8,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import org.spongycastle.crypto.InvalidCipherTextException;
+import org.spongycastle.pqc.math.ntru.util.Util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,18 +38,19 @@ public class MeshUpperTransportLayer {
             byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
             short addr = intent.getShortExtra(EXTRA_ADDR, (short) 0);
             int SEQ = intent.getIntExtra(EXTRA_SEQ, 0);
-            MeshUpperTransportPDU pdu = new MeshUpperTransportPDU(new MeshTransportPDU(data, SEQ));
-            Log.d(TAG, "Got upper transport data: " + Utils.toHexString(pdu.data()));
+            Log.d(TAG, "Data1: " + Utils.toHexString(data));
+            MeshTransportPDU tpdu = new MeshTransportPDU(data, SEQ);
+            MeshUpperTransportPDU pdu = new MeshUpperTransportPDU(tpdu);
             byte[] encData = pdu.data();
             if (pdu.getAKF()) {
                 // Todo: AppKey
             } else {
                 // DevKey
                 byte[] key = mContext.getManager().getCurrentNetwork().getDeviceKey(addr);
-                byte[] nonce = getNonce(mContext.getManager().getCurrentNetwork(), addr, mContext.getManager().getCurrentNetwork().getAddress(), pdu.getSEQ(), false);
+                byte[] nonce = getNonce(mContext.getManager().getCurrentNetwork(), addr, mContext.getManager().getCurrentNetwork().getAddress(), pdu.getSEQ(), tpdu.getSZMIC(), false);
                 byte[] unencData = null;
                 try {
-                    unencData = MeshEC.AES_CCM_Decrypt(key, nonce, encData, 32);
+                    unencData = MeshEC.AES_CCM_Decrypt(key, nonce, encData, tpdu.getSZMIC() ? 64 : 32);
                 } catch (InvalidCipherTextException e) {
                     e.printStackTrace();
                 }
@@ -98,12 +100,12 @@ public class MeshUpperTransportLayer {
         return result;
     }
 
-    public static byte[] getNonce(MeshNetwork network, short SRC, short DST, int SEQ, boolean af) {
+    public static byte[] getNonce(MeshNetwork network, short SRC, short DST, int SEQ, boolean SZMIC, boolean af) {
         byte[] result = new byte[13];
         int ivi = network.getIVIndex();
         if (af) result[0] = 0x01;
         else result[0] = 0x02;         // Application or Device nonce
-        result[1] = 0;                                          // SZMIC = 0;
+        result[1] = SZMIC ? (byte) 0x80 : 0;
         result[4] = (byte) (SEQ & 0xFF);
         result[3] = (byte) ((SEQ >>> 8) & 0xFF);
         result[2] = (byte) (SEQ >>> 16);

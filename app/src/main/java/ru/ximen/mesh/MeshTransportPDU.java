@@ -16,7 +16,7 @@ public class MeshTransportPDU extends MeshPDU {
     private short DST;
 
     // Constructor for segmented PDUs
-    public MeshTransportPDU(int SEQ, boolean AKF, byte AID, short DST, short SeqZero, byte SegO, byte SegN) {
+    public MeshTransportPDU(int SEQ, boolean AKF, byte AID, short DST, short SeqZero, byte SegO, byte SegN, boolean SZMIC) {
         this.SEQ = SEQ;
         this.AKF = AKF;
         this.AID = AID;
@@ -25,6 +25,7 @@ public class MeshTransportPDU extends MeshPDU {
         this.SegN = SegN;
         this.DST = DST;
         this.SEG = true;
+        this.SZMIC = SZMIC;
     }
 
     // Constructor for unsegmented PDUs
@@ -39,11 +40,11 @@ public class MeshTransportPDU extends MeshPDU {
     // Constructor for binary representation
     public MeshTransportPDU(byte[] data, int SEQ) {
         this.SEQ = SEQ;
-        SEG = (data[0] >>> 7) == 1;
+        SEG = ((data[0] >>> 7) & (0x01)) == 1;
         AKF = ((data[0] >>> 6) & 0x01) == 1;
         AID = (byte) (data[0] & 0x3f);
         if (SEG) {
-            SZMIC = (data[1] >>> 7) == 1;
+            SZMIC = ((data[1] >>> 7) & 0x01) == 1;
             SeqZero = (short) (((data[1] & 0x7F) << 6) + (data[2] >>> 2));
             SegO = (byte) (((data[2] & 0x03) << 3) + (data[3] >>> 5));
             SegN = (byte) (data[3] & 0x1f);
@@ -107,5 +108,17 @@ public class MeshTransportPDU extends MeshPDU {
 
     public byte[] getAccessData() {
         return mData;
+    }
+
+    public boolean getSZMIC() {
+        return SZMIC;
+    }
+
+    public byte getSegO() {
+        return SegO;
+    }
+
+    public byte getSegN() {
+        return SegN;
     }
 }

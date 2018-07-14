@@ -157,6 +157,7 @@ public class MeshService extends Service {
     private void broadcastUpdate(final String action, final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
         final byte[] data = characteristic.getValue();
+        Log.d(TAG, "Data: " + Utils.toHexString(data));
         if (data != null && data.length > 0) {
             intent.putExtra(EXTRA_DATA, data);
         }
