@@ -59,21 +59,18 @@ public class MeshTransportLayer {
                 set.add(pdu.getSegO(), pdu);
                 Log.d(TAG, "Adding incomplete pdu to index " + pdu.getSegO());
                 if (pdu.isLast()) processQueued(addr, pdu.getSegN());
-                // ToDo: Ack
             }
         }
     };
 
     private void processQueued(short addr, byte SegN) {
-        // Todo: Assemble Upper Transport PDU and broadcast access data intent
         Log.d(TAG, "Processing queue for " + addr + " and SegN " + SegN);
         ArrayList<MeshTransportPDU> set = receiveQueue.get(addr);
         MeshTransportPDU tpdu = set.get(SegN);
-        Log.d(TAG, "Last PDU: " + Utils.toHexString(tpdu.data()));
         tpdu = new MeshTransportPDU(tpdu.getSEQ() - SegN, tpdu.getAKF(), tpdu.getAID(), addr, (short) (tpdu.getSEQ() - SegN), tpdu.getSegN(), tpdu.getSegN(), tpdu.getSZMIC());
         tpdu.setData(new byte[0]);
-        Log.d(TAG, "New PDU: " + Utils.toHexString(tpdu.data()));
         byte[] result = new byte[0];
+        int ack = 0;
         for (int i = 0; i < set.size(); i++) {
             if (i > set.get(i).getSegO()) continue;
             byte[] tdata = set.get(i).getAccessData();
@@ -83,7 +80,9 @@ public class MeshTransportLayer {
             System.arraycopy(tdata, 0, tresult, result.length, tdata.length);
             result = tresult;
             Log.d(TAG, "result: " + Utils.toHexString(result));
+            ack += 1 << set.get(i).getSegO();
         }
+        sendAck((short) tpdu.getSEQ(), addr, ack);
         set.clear();
         tpdu.setData(result);
         Log.d(TAG, "Big PDU: " + Utils.toHexString(tpdu.data()));
@@ -93,6 +92,14 @@ public class MeshTransportLayer {
         newIntent.putExtra(EXTRA_ADDR, addr);
         newIntent.putExtra(EXTRA_SEQ, tpdu.getSEQ());
         mBroadcastManger.sendBroadcast(newIntent);
+    }
+
+    private void sendAck(short SeqZero, short addr, int blockAck) {
+        MeshTransportAckPDU pdu = new MeshTransportAckPDU(SeqZero, blockAck);
+        MeshNetworkPDU npdu = new MeshNetworkPDU(mContext.getManager().getCurrentNetwork(), mContext.getManager().getCurrentNetwork().getNextSeq(), addr, (byte) 1, defaultTTL); // CTL = 0, only access messages
+        npdu.setData(pdu.data());
+        mContext.getManager().getCurrentNetwork().sendPDU(npdu);
+
     }
 
     public void send(MeshUpperTransportPDU pdu) {

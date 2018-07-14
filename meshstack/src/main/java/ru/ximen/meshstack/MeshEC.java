@@ -65,7 +65,7 @@ public class MeshEC {
             e.printStackTrace();
         }
         pair = g.generateKeyPair();
-        Log.d(TAG, "Keys:" + pair.getPrivate().toString() + " and " + pair.getPublic().toString());
+        //Log.d(TAG, "Keys:" + pair.getPrivate().toString() + " and " + pair.getPublic().toString());
     }
 
     BigInteger getPKeyX() {
@@ -86,7 +86,7 @@ public class MeshEC {
         } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e) {
             e.printStackTrace();
         }
-        Log.d(TAG, "Peer Public Key:" + peerPKey.toString());
+        //Log.d(TAG, "Peer Public Key:" + peerPKey.toString());
     }
 
     static byte[] s1(byte[] input) {
@@ -186,11 +186,11 @@ public class MeshEC {
     }
 
     static public byte[] AES_CCM_Decrypt(byte[] key, byte[] nonce, byte[] data, int macSize) throws InvalidCipherTextException {
-        Log.d(TAG, "Decrypting...");
+        /*Log.d(TAG, "Decrypting...");
         Log.d(TAG, "Key: " + Utils.toHexString(key));
         Log.d(TAG, "Nonce: " + Utils.toHexString(nonce));
         Log.d(TAG, "Data: " + Utils.toHexString(data));
-        Log.d(TAG, "MacSize: " + macSize);
+        Log.d(TAG, "MacSize: " + macSize);*/
         CCMBlockCipher cipher = new CCMBlockCipher(new AESEngine());
         cipher.init(false, new AEADParameters(new KeyParameter(key), macSize, nonce));
         byte[] outputText = new byte[cipher.getOutputSize(data.length)];
@@ -222,20 +222,20 @@ public class MeshEC {
     public byte[] getConfirmation(byte[] inputs, byte[] authValue) {
         mAuthValue = authValue;
         mConfirmationSalt = s1(inputs);
-        Log.d(TAG, "Confirmation salt: " + Utils.toHexString(mConfirmationSalt));
+        //Log.d(TAG, "Confirmation salt: " + Utils.toHexString(mConfirmationSalt));
         mConfirmationKey = k1(secret, mConfirmationSalt, "prck".getBytes());
-        Log.d(TAG, "Confirmation key: " + Utils.toHexString(mConfirmationSalt));
+        //Log.d(TAG, "Confirmation key: " + Utils.toHexString(mConfirmationSalt));
         SecureRandom random = new SecureRandom();
         mRandomBytes = new byte[16]; // 128 bits are converted to 16 bytes;
         random.nextBytes(mRandomBytes);
-        Log.d(TAG, "Random: " + Utils.toHexString(mRandomBytes));
+        //Log.d(TAG, "Random: " + Utils.toHexString(mRandomBytes));
         byte[] randomAuth = new byte[32];
         System.arraycopy(mRandomBytes, 0, randomAuth, 0, 16);
         System.arraycopy(authValue, 0, randomAuth, 16, 16);
-        Log.d(TAG, "Random||AuthValue: " + Utils.toHexString(randomAuth));
+        //Log.d(TAG, "Random||AuthValue: " + Utils.toHexString(randomAuth));
 
         mConfirmation = AES_CMAC(randomAuth, mConfirmationKey);
-        Log.d(TAG, "Confirmation: " + Utils.toHexString(mConfirmation));
+        //Log.d(TAG, "Confirmation: " + Utils.toHexString(mConfirmation));
         return mConfirmation;
     }
 
@@ -243,11 +243,11 @@ public class MeshEC {
         byte[] randomAuth = new byte[32];
         System.arraycopy(randomBytes, 0, randomAuth, 0, 16);
         System.arraycopy(mAuthValue, 0, randomAuth, 16, 16);
-        Log.d(TAG, "Remote Random||AuthValue: " + Utils.toHexString(randomAuth));
+        //Log.d(TAG, "Remote Random||AuthValue: " + Utils.toHexString(randomAuth));
         byte[] confirmation = new byte[16];
 
         AES_CMAC(randomAuth, mConfirmationKey);
-        Log.d(TAG, "Remote confirmation: " + Utils.toHexString(confirmation));
+        //Log.d(TAG, "Remote confirmation: " + Utils.toHexString(confirmation));
         return confirmation;
     }
 
@@ -256,23 +256,23 @@ public class MeshEC {
     }
 
     public byte[] getProvisionData(byte[] data, byte[] peerRandom) {
-        Log.d(TAG, "Provision data:");
+        /*Log.d(TAG, "Provision data:");
         Log.d(TAG, " > ConfirmationSalt: " + Utils.toHexString(mConfirmationSalt));
         Log.d(TAG, " > RandomProvisioner: " + Utils.toHexString(mRandomBytes));
-        Log.d(TAG, " > RandomDevice: " + Utils.toHexString(peerRandom));
+        Log.d(TAG, " > RandomDevice: " + Utils.toHexString(peerRandom));*/
         byte[] saltData = new byte[48];
         System.arraycopy(mConfirmationSalt, 0, saltData, 0, 16);
         System.arraycopy(mRandomBytes, 0, saltData, 16, 16);
         System.arraycopy(peerRandom, 0, saltData, 32, 16);
-        Log.d(TAG, " > ProvisionInputs: " + Utils.toHexString(saltData));
+        //Log.d(TAG, " > ProvisionInputs: " + Utils.toHexString(saltData));
         provisionSalt = s1(saltData);
-        Log.d(TAG, " > ProvisionSalt: " + Utils.toHexString(provisionSalt));
+        //Log.d(TAG, " > ProvisionSalt: " + Utils.toHexString(provisionSalt));
         byte[] sessionKey = k1(secret, provisionSalt, "prsk".getBytes());
-        Log.d(TAG, " > SessionKey: " + Utils.toHexString(sessionKey));
+        //Log.d(TAG, " > SessionKey: " + Utils.toHexString(sessionKey));
         byte[] sessionNonce = new byte[13];
         System.arraycopy(k1(secret, provisionSalt, "prsn".getBytes()), 3, sessionNonce, 0, 13);
-        Log.d(TAG, " > Nonce: " + Utils.toHexString(sessionNonce));
-        Log.d(TAG, " > ProvisionData: " + Utils.toHexString(data));
+        //Log.d(TAG, " > Nonce: " + Utils.toHexString(sessionNonce));
+        //Log.d(TAG, " > ProvisionData: " + Utils.toHexString(data));
 
         Pair<byte[], byte[]> t = AES_CCM(sessionKey, sessionNonce, data, 64);
         byte[] out = new byte[25 + 8];
