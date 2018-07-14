@@ -12,6 +12,7 @@ public class MeshConfigurationModel extends MeshModel {
         addProcedure(new MeshGATTProxyProc(this));
         addProcedure(new MeshCompositionDataProc(this));
         addProcedure(new MeshRelayProc(this));
+        addProcedure(new MeshDefaultTTLProc(this));
     }
 
 }
