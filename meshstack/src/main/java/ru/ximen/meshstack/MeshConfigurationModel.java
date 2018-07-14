@@ -13,6 +13,7 @@ public class MeshConfigurationModel extends MeshModel {
         addProcedure(new MeshCompositionDataProc(this));
         addProcedure(new MeshRelayProc(this));
         addProcedure(new MeshDefaultTTLProc(this));
+        addProcedure(new MeshAppKeyProc(this));
     }
 
 }
