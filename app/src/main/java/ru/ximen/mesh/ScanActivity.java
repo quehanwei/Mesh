@@ -26,6 +26,12 @@ import android.widget.ListView;
 import android.widget.Toast;
 import java.util.ArrayList;
 
+import ru.ximen.meshstack.MeshApplication;
+import ru.ximen.meshstack.MeshDevice;
+import ru.ximen.meshstack.MeshNetwork;
+import ru.ximen.meshstack.MeshProvisionModel;
+import ru.ximen.meshstack.MeshService;
+
 public class ScanActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private ArrayList<String> listItems=new ArrayList<>();

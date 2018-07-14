@@ -1,8 +1,5 @@
 package ru.ximen.mesh;
 
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -13,6 +10,11 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import ru.ximen.meshstack.MeshApplication;
+import ru.ximen.meshstack.MeshDevice;
+import ru.ximen.meshstack.MeshNetwork;
+
 
 public class NetworkActivity extends AppCompatActivity {
     private final String TAG = "NetworkActivity";

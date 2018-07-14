@@ -8,13 +8,19 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
+import ru.ximen.meshstack.MeshApplication;
+import ru.ximen.meshstack.MeshCompositionDataProc;
+import ru.ximen.meshstack.MeshConfigurationClient;
+import ru.ximen.meshstack.MeshDevice;
+import ru.ximen.meshstack.MeshModel;
+import ru.ximen.meshstack.MeshNetwork;
+import ru.ximen.meshstack.MeshProcedure;
+import ru.ximen.meshstack.MeshStatusResult;
+import ru.ximen.meshstack.*;
 
 public class DeviceListAdapter extends BaseAdapter {
     final static private String TAG = "MeshAdapter";

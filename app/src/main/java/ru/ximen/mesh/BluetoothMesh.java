@@ -2,7 +2,8 @@ package ru.ximen.mesh;
 
 import android.util.Log;
 
-import org.spongycastle.pqc.math.ntru.util.Util;
+import ru.ximen.meshstack.MeshEC;
+import ru.ximen.meshstack.Utils;
 
 public class BluetoothMesh {
     final static private String TAG = "BluetoothMesh";

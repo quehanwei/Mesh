@@ -1,4 +1,4 @@
-package ru.ximen.mesh;
+package ru.ximen.meshstack;
 
 import android.app.Application;
 import android.content.ComponentName;

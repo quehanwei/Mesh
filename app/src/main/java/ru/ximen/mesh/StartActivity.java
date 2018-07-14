@@ -17,6 +17,9 @@ import android.widget.ListView;
 
 import java.util.ArrayList;
 
+import ru.ximen.meshstack.MeshApplication;
+import ru.ximen.meshstack.MeshNetwork;
+
 public class StartActivity extends AppCompatActivity {
     //private MeshManager manager;
     ArrayAdapter<String> listAdapter;

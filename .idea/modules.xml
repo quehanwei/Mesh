@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Mesh.iml" filepath="$PROJECT_DIR$/Mesh.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/meshstack/meshstack.iml" filepath="$PROJECT_DIR$/meshstack/meshstack.iml" />
     </modules>
   </component>
 </project>
