@@ -1,7 +1,9 @@
 package ru.ximen.mesh;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
@@ -16,6 +18,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -35,6 +38,16 @@ public class StartActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
+        if (sharedPref.getBoolean("autoload", false)){
+            String network = sharedPref.getString("network", "");
+            Intent intent = new Intent(StartActivity.this, NetworkActivity.class);
+            intent.putExtra("ru.ximen.mesh.NETWORK", network);
+            Log.d("StartActivity", "Network name: " + network);
+            startActivity(intent);
+        }
+
+
         setContentView(R.layout.activity_start);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -51,6 +64,14 @@ public class StartActivity extends AppCompatActivity {
                 Intent intent = new Intent(StartActivity.this, NetworkActivity.class);
                 intent.putExtra("ru.ximen.mesh.NETWORK", item);
                 Log.d("StartActivity", "Network name: " + item);
+                CheckBox cb = findViewById(R.id.checkBox);
+                if(cb.isChecked()){
+                    SharedPreferences sharedPref = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putBoolean("autoload", true);
+                    editor.putString("network", item);
+                    editor.apply();
+                }
                 startActivity(intent);
             }
         });
