@@ -12,7 +12,6 @@ import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -53,7 +52,7 @@ public class StartActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         ArrayList<String> filesList = new ArrayList<>();
-        filesList.addAll(((MeshApplication) getApplication()).getManager().listNetworks());
+        filesList.addAll(((MeshApplication) getApplication()).getNetworkManager().listNetworks());
         listAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, filesList);
         ListView lv = findViewById(R.id.listView);
         lv.setAdapter(listAdapter);
@@ -98,7 +97,7 @@ public class StartActivity extends AppCompatActivity {
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        MeshNetwork network = ((MeshApplication) getApplication()).getManager().createNetwork(input.getText().toString());
+                        MeshNetwork network = ((MeshApplication) getApplication()).getNetworkManager().createNetwork(input.getText().toString());
                         Intent intent = new Intent(StartActivity.this, NetworkActivity.class);
                         intent.putExtra("ru.ximen.mesh.NETWORK", input.getText().toString());
                         Log.d("StartActivity", "Network name: " + input.getText().toString());
@@ -124,14 +123,14 @@ public class StartActivity extends AppCompatActivity {
                 AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
                 final ListView lv = findViewById(R.id.listView);
                 String selectedItem = (String) lv.getItemAtPosition(info.position);
-                ((MeshApplication) getApplication()).getManager().deleteNetwork(selectedItem);
+                ((MeshApplication) getApplication()).getNetworkManager().deleteNetwork(selectedItem);
                 Toast toast = Toast.makeText(StartActivity.this, "Deleting network " + selectedItem, Toast.LENGTH_SHORT);
                 toast.show();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         ArrayList<String> filesList = new ArrayList<>();
-                        filesList.addAll(((MeshApplication) getApplication()).getManager().listNetworks());
+                        filesList.addAll(((MeshApplication) getApplication()).getNetworkManager().listNetworks());
                         listAdapter = new ArrayAdapter<String>(StartActivity.this, android.R.layout.simple_list_item_1, filesList);
                         lv.setAdapter(listAdapter);
                     }

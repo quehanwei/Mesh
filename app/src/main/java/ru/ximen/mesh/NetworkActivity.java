@@ -30,7 +30,7 @@ public class NetworkActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mNetwork = ((MeshApplication) getApplicationContext()).getManager().selectNetowrk(getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
+        mNetwork = ((MeshApplication) getApplicationContext()).getNetworkManager().selectNetowrk(getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {

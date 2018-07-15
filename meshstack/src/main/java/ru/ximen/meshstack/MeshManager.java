@@ -3,6 +3,7 @@ package ru.ximen.meshstack;
 import android.content.Context;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -18,12 +19,12 @@ import java.util.List;
  */
 
 public final class MeshManager {
-    private Context mContext;
+    private MeshApplication mContext;
     private File mDirectory;
     private MeshNetwork currentNetwork;
     final static private String TAG = "MeshManager";
 
-    public MeshManager(Context mContext, File directory) {
+    public MeshManager(MeshApplication mContext, File directory) {
         this.mContext = mContext;
         mDirectory = directory;
     }
@@ -83,7 +84,14 @@ public final class MeshManager {
      * Updates currently selected network on disk
      */
     public void updateNetwork() {
-        save(currentNetwork.toJSON());
+        JSONObject json = currentNetwork.toJSON();
+        JSONArray app = mContext.getAppManager().toJSON();
+        try {
+            json.put("applications", app);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        save(json);
     }
 
     private void save(JSONObject json) {
@@ -126,6 +134,11 @@ public final class MeshManager {
 
     public MeshNetwork selectNetowrk(String name) {
         currentNetwork = getNetwork(name);
+        try {
+            mContext.getAppManager().fromJSON(load(name).getJSONArray("applications"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         return currentNetwork;
     }
 
