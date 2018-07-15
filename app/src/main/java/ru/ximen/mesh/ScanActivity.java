@@ -143,7 +143,7 @@ public class ScanActivity extends AppCompatActivity {
 
                         Log.i(TAG, "Starting provision");
                         ((MeshApplication) getApplicationContext()).
-                                getManager().
+                                getNetworkManager().
                                 getCurrentNetwork().
                                 provisionDevice(((MeshApplication) getApplicationContext()).getMeshService().getConnectedDevice(),
                                         name,

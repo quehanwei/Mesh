@@ -7,8 +7,6 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import org.spongycastle.pqc.math.ntru.util.Util;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -96,9 +94,9 @@ public class MeshTransportLayer {
 
     private void sendAck(short SeqZero, short addr, int blockAck) {
         MeshTransportAckPDU pdu = new MeshTransportAckPDU(SeqZero, blockAck);
-        MeshNetworkPDU npdu = new MeshNetworkPDU(mContext.getManager().getCurrentNetwork(), mContext.getManager().getCurrentNetwork().getNextSeq(), addr, (byte) 1, defaultTTL); // CTL = 0, only access messages
+        MeshNetworkPDU npdu = new MeshNetworkPDU(mContext.getNetworkManager().getCurrentNetwork(), mContext.getNetworkManager().getCurrentNetwork().getNextSeq(), addr, (byte) 1, defaultTTL); // CTL = 0, only access messages
         npdu.setData(pdu.data());
-        mContext.getManager().getCurrentNetwork().sendPDU(npdu);
+        mContext.getNetworkManager().getCurrentNetwork().sendPDU(npdu);
 
     }
 
@@ -108,23 +106,23 @@ public class MeshTransportLayer {
             int SEQ = pdu.getSEQ();
             short SeqZero = (short) SEQ;
             for (int i = 0; i < data.length; i += 12) {
-                if (i > 0) SEQ = mContext.getManager().getCurrentNetwork().getNextSeq();
+                if (i > 0) SEQ = mContext.getNetworkManager().getCurrentNetwork().getNextSeq();
                 byte[] segmentData = new byte[((data.length - i) > 12) ? 12 : (data.length - 1)];
                 System.arraycopy(data, i, segmentData, 0, segmentData.length);
                 MeshTransportPDU tpdu = new MeshTransportPDU(SEQ, pdu.getAKF(), pdu.getAID(), pdu.getDST(), SeqZero, (byte) (i / 12), (byte) Math.ceil(data.length / 12), false);
                 tpdu.setData(segmentData);
-                MeshNetworkPDU npdu = new MeshNetworkPDU(mContext.getManager().getCurrentNetwork(), SEQ, tpdu.getDST(), (byte) 0, defaultTTL); // CTL = 0, only access messages
+                MeshNetworkPDU npdu = new MeshNetworkPDU(mContext.getNetworkManager().getCurrentNetwork(), SEQ, tpdu.getDST(), (byte) 0, defaultTTL); // CTL = 0, only access messages
                 npdu.setData(tpdu.data());
-                mContext.getManager().getCurrentNetwork().sendPDU(npdu);
+                mContext.getNetworkManager().getCurrentNetwork().sendPDU(npdu);
             }
         } else {
             MeshTransportPDU tpdu = new MeshTransportPDU(pdu.getSEQ(), pdu.getAKF(), pdu.getAID(), pdu.getDST());
             tpdu.setData(data);
             //Log.d(TAG, "Transport PDU: " + Utils.toHexString(tpdu.data()));
-            MeshNetworkPDU npdu = new MeshNetworkPDU(mContext.getManager().getCurrentNetwork(), tpdu.getSEQ(), tpdu.getDST(), (byte) 0, defaultTTL); // CTL = 0, only access messages
+            MeshNetworkPDU npdu = new MeshNetworkPDU(mContext.getNetworkManager().getCurrentNetwork(), tpdu.getSEQ(), tpdu.getDST(), (byte) 0, defaultTTL); // CTL = 0, only access messages
             npdu.setData(tpdu.data());
             //Log.d(TAG, "Network PDU: " + Utils.toHexString(npdu.data()));
-            mContext.getManager().getCurrentNetwork().sendPDU(npdu);
+            mContext.getNetworkManager().getCurrentNetwork().sendPDU(npdu);
         }
     }
 }

@@ -59,7 +59,7 @@ public abstract class MeshModel {
     }
 
     public MeshNetwork getNetwork() {
-        return mContext.getManager().getCurrentNetwork();
+        return mContext.getNetworkManager().getCurrentNetwork();
     }
 
     public MeshTransportLayer getTransportLayer() {

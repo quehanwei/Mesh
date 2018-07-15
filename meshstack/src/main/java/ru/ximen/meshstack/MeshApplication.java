@@ -12,6 +12,7 @@ public class MeshApplication extends Application {
     private MeshService mService;
     private MeshTransportLayer transportLayer;
     private MeshUpperTransportLayer upperTransportLayer;
+    private MeshAppManager applications;
 
     @Override
     public void onCreate() {
@@ -19,6 +20,7 @@ public class MeshApplication extends Application {
         manager = new MeshManager(this, getFilesDir());
         transportLayer = new MeshTransportLayer(this);
         upperTransportLayer = new MeshUpperTransportLayer(this);
+        applications = new MeshAppManager();
         Intent intent = new Intent(this, MeshService.class);
         if (bindService(intent, mConnection, BIND_AUTO_CREATE)) {
             Log.e("Application", "Error binding service");
@@ -29,8 +31,12 @@ public class MeshApplication extends Application {
         return mService;
     }
 
-    public MeshManager getManager() {
+    public MeshManager getNetworkManager() {
         return manager;
+    }
+
+    public MeshAppManager getAppManager() {
+        return applications;
     }
 
     public MeshTransportLayer getTransportLayer() {

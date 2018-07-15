@@ -8,7 +8,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import org.spongycastle.crypto.InvalidCipherTextException;
-import org.spongycastle.pqc.math.ntru.util.Util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,8 +44,8 @@ public class MeshUpperTransportLayer {
                 // Todo: AppKey
             } else {
                 // DevKey
-                byte[] key = mContext.getManager().getCurrentNetwork().getDeviceKey(addr);
-                byte[] nonce = getNonce(mContext.getManager().getCurrentNetwork(), addr, mContext.getManager().getCurrentNetwork().getAddress(), pdu.getSEQ(), tpdu.getSZMIC(), false);
+                byte[] key = mContext.getNetworkManager().getCurrentNetwork().getDeviceKey(addr);
+                byte[] nonce = getNonce(mContext.getNetworkManager().getCurrentNetwork(), addr, mContext.getNetworkManager().getCurrentNetwork().getAddress(), pdu.getSEQ(), tpdu.getSZMIC(), false);
                 byte[] unencData = null;
                 try {
                     unencData = MeshEC.AES_CCM_Decrypt(key, nonce, encData, tpdu.getSZMIC() ? 64 : 32);

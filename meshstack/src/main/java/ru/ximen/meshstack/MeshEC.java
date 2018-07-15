@@ -159,6 +159,18 @@ public class MeshEC {
         } else return signed;
     }
 
+    public static byte k4(byte[] N){
+        byte[] salt = s1("smk4".getBytes());
+        byte[] T = AES_CMAC(N, salt);
+        byte[] P = new byte[4];
+        System.arraycopy("id6".getBytes(), 0, P, 0, 3);
+        P[3] = 0x01;
+        byte[] result = AES_CMAC(P, T);
+        BigInteger modulo = new BigInteger("2").pow(6);
+        byte[] signed = new BigInteger(result).mod(modulo).toByteArray();
+        return signed[0];
+    }
+
     static private byte[] AES_CMAC(byte[] P, byte[] T) {
         byte[] R = new byte[16];
         CMac macT = new CMac(new AESEngine());
