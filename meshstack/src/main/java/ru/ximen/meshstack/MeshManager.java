@@ -75,7 +75,8 @@ public final class MeshManager {
      * @param name Name of network to delete
      */
     public void deleteNetwork(String name) {
-
+        File file = new File(mDirectory, name);
+        file.delete();
     }
 
     /**
@@ -131,4 +132,5 @@ public final class MeshManager {
     public MeshNetwork getCurrentNetwork() {
         return currentNetwork;
     }
+
 }
