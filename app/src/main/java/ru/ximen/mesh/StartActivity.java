@@ -9,11 +9,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -22,6 +27,8 @@ import ru.ximen.meshstack.MeshNetwork;
 
 public class StartActivity extends AppCompatActivity {
     //private MeshManager manager;
+    public static final int IDM_DELETE = 1001;
+
     ArrayAdapter<String> listAdapter;
 
     @Override
@@ -47,6 +54,13 @@ public class StartActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        lv.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
+            @Override
+            public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                menu.add(Menu.NONE, IDM_DELETE, Menu.NONE, "Delete");
+            }
+        });
+
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -81,5 +95,32 @@ public class StartActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case IDM_DELETE:
+                AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+                final ListView lv = findViewById(R.id.listView);
+                String selectedItem = (String) lv.getItemAtPosition(info.position);
+                ((MeshApplication) getApplication()).getManager().deleteNetwork(selectedItem);
+                Toast toast = Toast.makeText(StartActivity.this, "Deleting network " + selectedItem, Toast.LENGTH_SHORT);
+                toast.show();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ArrayList<String> filesList = new ArrayList<>();
+                        filesList.addAll(((MeshApplication) getApplication()).getManager().listNetworks());
+                        listAdapter = new ArrayAdapter<String>(StartActivity.this, android.R.layout.simple_list_item_1, filesList);
+                        lv.setAdapter(listAdapter);
+                    }
+                });
+                break;
+            default:
+                //return super.onContextItemSelected(item);
+        }
+        return true;
+    }
+
 
 }
