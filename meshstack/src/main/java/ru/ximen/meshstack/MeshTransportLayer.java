@@ -10,22 +10,22 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static ru.ximen.meshstack.MeshService.EXTRA_ADDR;
-import static ru.ximen.meshstack.MeshService.EXTRA_DATA;
-import static ru.ximen.meshstack.MeshService.EXTRA_SEQ;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_ADDR;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 
 public class MeshTransportLayer {
     final static private String TAG = "MeshTransportLayer";
     private byte defaultTTL = 20;
-    private MeshApplication mContext;
+    private MeshStackService mContext;
     private LocalBroadcastManager mBroadcastManger;
     //private HashSet<Short, MeshTransportPDU> sendQueue;
     private HashMap<Short, ArrayList<MeshTransportPDU>> receiveQueue;
 
-    public MeshTransportLayer(MeshApplication context) {
+    public MeshTransportLayer(MeshStackService context) {
         mContext = context;
         receiveQueue = new HashMap<>();
-        IntentFilter filter = new IntentFilter(MeshService.ACTION_TRANSPORT_DATA_AVAILABLE);
+        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_TRANSPORT_DATA_AVAILABLE);
         mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
     }
@@ -41,7 +41,7 @@ public class MeshTransportLayer {
             MeshTransportPDU pdu = new MeshTransportPDU(data, SEQ);
             if (pdu.isComplete()) {
                 Log.d(TAG, "Complete PDU: " + Utils.toHexString(pdu.getAccessData()));
-                final Intent newIntent = new Intent(MeshService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
+                final Intent newIntent = new Intent(MeshBluetoothService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
                 newIntent.putExtra(EXTRA_DATA, pdu.data());
                 newIntent.putExtra(EXTRA_ADDR, addr);
                 newIntent.putExtra(EXTRA_SEQ, SEQ);
@@ -85,7 +85,7 @@ public class MeshTransportLayer {
         tpdu.setData(result);
         Log.d(TAG, "Big PDU: " + Utils.toHexString(tpdu.data()));
 
-        final Intent newIntent = new Intent(MeshService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
+        final Intent newIntent = new Intent(MeshBluetoothService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
         newIntent.putExtra(EXTRA_DATA, tpdu.data());
         newIntent.putExtra(EXTRA_ADDR, addr);
         newIntent.putExtra(EXTRA_SEQ, tpdu.getSEQ());

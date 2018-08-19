@@ -11,7 +11,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ru.ximen.meshstack.MeshService.EXTRA_DATA;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
 
 /**
  * Created by ximen on 17.03.18.
@@ -31,7 +31,7 @@ public class MeshProxyModel {
     public MeshProxyModel(Context context) {
         mContext = context;
         Log.d(TAG, "Binding service");
-        IntentFilter filter = new IntentFilter(MeshService.ACTION_PROXY_DATA_AVAILABLE);
+        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_PROXY_DATA_AVAILABLE);
         mBroadcastManager = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManager.registerReceiver(mGattUpdateReceiver, filter);
         mData = new ArrayList<>();
@@ -44,16 +44,16 @@ public class MeshProxyModel {
         if (pdu instanceof MeshProvisionPDU) sar = (byte) (sar | 3);   // Type of PDU
         if (pdu instanceof MeshNetworkPDU) sar = (byte) (sar | 0);   // Type of PDU
 
-        if (data.length > MeshService.MTU - 1) {
+        if (data.length > MeshBluetoothService.MTU - 1) {
             Log.d(TAG, "Splitting PDU");
-            byte[] partData = new byte[MeshService.MTU - 1];
-            for (int i = 0; i < data.length; i += MeshService.MTU - 1) {
+            byte[] partData = new byte[MeshBluetoothService.MTU - 1];
+            for (int i = 0; i < data.length; i += MeshBluetoothService.MTU - 1) {
                 if (i == 0) {
                     sar &= 0x3f;
                     sar |= 0x40;        // first segment
-                    System.arraycopy(data, i, partData, 0, MeshService.MTU - 1);
+                    System.arraycopy(data, i, partData, 0, MeshBluetoothService.MTU - 1);
                     sendPart(sar, partData);
-                } else if (data.length - i <= MeshService.MTU - 1) {
+                } else if (data.length - i <= MeshBluetoothService.MTU - 1) {
                     sar &= 0x3f;
                     sar |= 0xC0;        // last segment
                     byte[] lastData = new byte[data.length - i];
@@ -62,7 +62,7 @@ public class MeshProxyModel {
                 } else {
                     sar &= 0x3f;
                     sar |= 0x80;        // segment
-                    System.arraycopy(data, i, partData, 0, MeshService.MTU - 1);
+                    System.arraycopy(data, i, partData, 0, MeshBluetoothService.MTU - 1);
                     sendPart(sar, partData);
                 }
             }
@@ -139,16 +139,16 @@ public class MeshProxyModel {
             if (!transactionRx) {
                 switch (type) {
                     case 0x00:
-                        broadcastUpdate(MeshService.ACTION_NETWORK_DATA_AVAILABLE);
+                        broadcastUpdate(MeshBluetoothService.ACTION_NETWORK_DATA_AVAILABLE);
                         break;
                     case 0x01:
-                        broadcastUpdate(MeshService.ACTION_MESH_BEACON_DATA_AVAILABLE);
+                        broadcastUpdate(MeshBluetoothService.ACTION_MESH_BEACON_DATA_AVAILABLE);
                         break;
                     case 0x02:
-                        broadcastUpdate(MeshService.ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE);
+                        broadcastUpdate(MeshBluetoothService.ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE);
                         break;
                     case 0x03:
-                        broadcastUpdate(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
+                        broadcastUpdate(MeshBluetoothService.ACTION_PROVISION_DATA_AVAILABLE);
                         break;
                     default:
                         Log.d(TAG, "PDU of unknown type received");

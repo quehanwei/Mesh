@@ -19,12 +19,12 @@ import java.util.List;
  */
 
 public final class MeshManager {
-    private MeshApplication mContext;
+    private MeshStackService mContext;
     private File mDirectory;
     private MeshNetwork currentNetwork;
     final static private String TAG = "MeshManager";
 
-    public MeshManager(MeshApplication mContext, File directory) {
+    public MeshManager(MeshStackService mContext, File directory) {
         this.mContext = mContext;
         mDirectory = directory;
     }

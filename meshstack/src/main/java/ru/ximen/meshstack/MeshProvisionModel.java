@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ru.ximen.meshstack.MeshService.EXTRA_DATA;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
 
 /**
  * Created by ximen on 18.03.18.
@@ -61,7 +61,7 @@ public class MeshProvisionModel {
         mNetwork = network;
         mContext = context;
         mProxy = proxy;
-        IntentFilter filter = new IntentFilter(MeshService.ACTION_PROVISION_DATA_AVAILABLE);
+        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_PROVISION_DATA_AVAILABLE);
         mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
         ec = new MeshEC();

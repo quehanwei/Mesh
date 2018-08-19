@@ -11,7 +11,6 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.spongycastle.pqc.math.ntru.util.Util;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -19,9 +18,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static ru.ximen.meshstack.MeshService.EXTRA_ADDR;
-import static ru.ximen.meshstack.MeshService.EXTRA_DATA;
-import static ru.ximen.meshstack.MeshService.EXTRA_SEQ;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_ADDR;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 
 /**
  * Created by ximen on 12.05.18.
@@ -79,8 +78,8 @@ public class MeshNetwork {
         //Log.d(TAG, "Encryption key: " + Utils.toHexString(mEncryptionKey));
         //Log.d(TAG, "Privacy key: " + Utils.toHexString(mPrivacyKey));
 
-        IntentFilter filter = new IntentFilter(MeshService.ACTION_NETWORK_DATA_AVAILABLE);
-        filter.addAction(MeshService.ACTION_MESH_BEACON_DATA_AVAILABLE);
+        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_NETWORK_DATA_AVAILABLE);
+        filter.addAction(MeshBluetoothService.ACTION_MESH_BEACON_DATA_AVAILABLE);
         mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
     }
@@ -89,19 +88,19 @@ public class MeshNetwork {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            if (action.equals(MeshService.ACTION_NETWORK_DATA_AVAILABLE)) {
+            if (action.equals(MeshBluetoothService.ACTION_NETWORK_DATA_AVAILABLE)) {
                 byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
                 Log.d(TAG, "Got network data: " + Utils.toHexString(data));
                 MeshNetworkPDU pdu = new MeshNetworkPDU(MeshNetwork.this, data);
                 Log.d(TAG, "SEQ: " + pdu.getSEQ());
                 if (pdu.isValid()) {
-                    final Intent newIntent = new Intent(MeshService.ACTION_TRANSPORT_DATA_AVAILABLE);
+                    final Intent newIntent = new Intent(MeshBluetoothService.ACTION_TRANSPORT_DATA_AVAILABLE);
                     newIntent.putExtra(EXTRA_DATA, pdu.getTransportPDU());
                     newIntent.putExtra(EXTRA_ADDR, pdu.getSRC());
                     newIntent.putExtra(EXTRA_SEQ, pdu.getSEQ());
                     mBroadcastManger.sendBroadcast(newIntent);
                 }
-            } else if (action.equals(MeshService.ACTION_MESH_BEACON_DATA_AVAILABLE)) {
+            } else if (action.equals(MeshBluetoothService.ACTION_MESH_BEACON_DATA_AVAILABLE)) {
                 Log.d(TAG, "Got secure network beacon data");
                 byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
                 if (data[0] == 1) {
