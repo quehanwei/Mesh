@@ -20,7 +20,7 @@ import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
 // TODO: Proxy Configuration messages
 
 public class MeshProxyModel {
-    private final Context mContext;
+    private final MeshStackService mContext;
     final static private String TAG = "MeshProxy";
     private LocalBroadcastManager mBroadcastManager;
     private List<Byte> mData;
@@ -28,7 +28,7 @@ public class MeshProxyModel {
     private boolean transactionTx;
     private boolean mBound;
 
-    public MeshProxyModel(Context context) {
+    public MeshProxyModel(MeshStackService context) {
         mContext = context;
         Log.d(TAG, "Binding service");
         IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_PROXY_DATA_AVAILABLE);
@@ -82,9 +82,9 @@ public class MeshProxyModel {
         System.arraycopy(data, 0, params, 1, data.length);
         Log.d(TAG, "Sending: " + new BigInteger(1, params).toString(16));
         if ((sar & 0x3f) == 3) {
-            ((MeshApplication) mContext.getApplicationContext()).getMeshService().writeProvision(params);
+            mContext.getMeshService().writeProvision(params);
         } else {
-            ((MeshApplication) mContext.getApplicationContext()).getMeshService().writeProxy(params);
+            mContext.getMeshService().writeProxy(params);
         }
     }
 

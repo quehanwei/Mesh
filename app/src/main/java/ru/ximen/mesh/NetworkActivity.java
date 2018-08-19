@@ -3,8 +3,6 @@ package ru.ximen.mesh;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.FragmentActivity;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
@@ -12,12 +10,12 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import ru.ximen.meshstack.MeshApplication;
 import ru.ximen.meshstack.MeshDevice;
 import ru.ximen.meshstack.MeshNetwork;
+import ru.ximen.meshstack.MeshStackService;
 
 
-public class NetworkActivity extends AppCompatActivity {
+public class NetworkActivity extends BasicServiceActivty {
     private final String TAG = "NetworkActivity";
     private DeviceListAdapter mLstAdapter;
     private MeshNetwork mNetwork;
@@ -30,9 +28,13 @@ public class NetworkActivity extends AppCompatActivity {
         setContentView(R.layout.activity_network);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        startService(new Intent(this, MeshStackService.class));
+    }
 
-        mNetwork = ((MeshApplication) getApplicationContext()).getNetworkManager().selectNetowrk(getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
-
+    @Override
+    protected void onServiceAttached(MeshStackService service) {
+        super.onServiceAttached(service);
+        mNetwork = mStackService.getNetworkManager().selectNetowrk(getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -51,7 +53,7 @@ public class NetworkActivity extends AppCompatActivity {
 
         final ListView listview = findViewById(R.id.listView);
 
-        mLstAdapter = new DeviceListAdapter(this, mNetwork);
+        mLstAdapter = new DeviceListAdapter(this, mStackService);
         listview.setAdapter(mLstAdapter);
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -60,7 +62,7 @@ public class NetworkActivity extends AppCompatActivity {
                 final MeshDevice item = (MeshDevice) parent.getItemAtPosition(position);
                 Log.d(TAG, item.getName());
                 Toast.makeText(getApplicationContext(), "Connecting device " + item.getName(), Toast.LENGTH_LONG).show();
-                ((MeshApplication) getApplicationContext()).getMeshService().connect(item);
+                mStackService.getMeshService().connect(item);
             }
 
         });
@@ -76,10 +78,10 @@ public class NetworkActivity extends AppCompatActivity {
 
     @Override
     protected void onStart() {
-        if (!((MeshApplication) getApplicationContext()).getMeshService().isConnected()) {
+        if (!mStackService.getMeshService().isConnected()) {
             Toast.makeText(this, "Connecting to network " + mNetwork.getName(), Toast.LENGTH_SHORT).show();
             if (mNetwork.getDevices().size() > 0)
-                ((MeshApplication) getApplicationContext()).getMeshService().connect(findProxy());
+                mStackService.getMeshService().connect(findProxy());
         }
         super.onStart();
     }

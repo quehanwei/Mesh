@@ -1,10 +1,13 @@
 package ru.ximen.mesh;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -24,11 +27,10 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
-import ru.ximen.meshstack.MeshApplication;
 import ru.ximen.meshstack.MeshNetwork;
+import ru.ximen.meshstack.MeshStackService;
 
-public class StartActivity extends AppCompatActivity {
-    //private MeshManager manager;
+public class StartActivity extends BasicServiceActivty {
     public static final int IDM_DELETE = 1001;
 
     ArrayAdapter<String> listAdapter;
@@ -37,6 +39,7 @@ public class StartActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // If network was previously selected and set autoload, simply start it
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
         if (sharedPref.getBoolean("autoload", false)){
             String network = sharedPref.getString("network", "");
@@ -46,13 +49,18 @@ public class StartActivity extends AppCompatActivity {
             startActivity(intent);
         }
 
-
         setContentView(R.layout.activity_start);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        startService(new Intent(this, MeshStackService.class));
+    }
+
+    @Override
+    protected void onServiceAttached(MeshStackService service) {
+        super.onServiceAttached(service);
         ArrayList<String> filesList = new ArrayList<>();
-        filesList.addAll(((MeshApplication) getApplication()).getNetworkManager().listNetworks());
+        filesList.addAll(mStackService.getNetworkManager().listNetworks());
         listAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, filesList);
         ListView lv = findViewById(R.id.listView);
         lv.setAdapter(listAdapter);
@@ -97,7 +105,7 @@ public class StartActivity extends AppCompatActivity {
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        MeshNetwork network = ((MeshApplication) getApplication()).getNetworkManager().createNetwork(input.getText().toString());
+                        MeshNetwork network = mStackService.getNetworkManager().createNetwork(input.getText().toString());
                         Intent intent = new Intent(StartActivity.this, NetworkActivity.class);
                         intent.putExtra("ru.ximen.mesh.NETWORK", input.getText().toString());
                         Log.d("StartActivity", "Network name: " + input.getText().toString());
@@ -123,14 +131,14 @@ public class StartActivity extends AppCompatActivity {
                 AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
                 final ListView lv = findViewById(R.id.listView);
                 String selectedItem = (String) lv.getItemAtPosition(info.position);
-                ((MeshApplication) getApplication()).getNetworkManager().deleteNetwork(selectedItem);
+                mStackService.getNetworkManager().deleteNetwork(selectedItem);
                 Toast toast = Toast.makeText(StartActivity.this, "Deleting network " + selectedItem, Toast.LENGTH_SHORT);
                 toast.show();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         ArrayList<String> filesList = new ArrayList<>();
-                        filesList.addAll(((MeshApplication) getApplication()).getNetworkManager().listNetworks());
+                        filesList.addAll(mStackService.getNetworkManager().listNetworks());
                         listAdapter = new ArrayAdapter<String>(StartActivity.this, android.R.layout.simple_list_item_1, filesList);
                         lv.setAdapter(listAdapter);
                     }
@@ -141,6 +149,5 @@ public class StartActivity extends AppCompatActivity {
         }
         return true;
     }
-
 
 }

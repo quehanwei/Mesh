@@ -4,10 +4,10 @@ import java.util.HashSet;
 
 public abstract class MeshClient {
     private HashSet<MeshModel> models;
-    private MeshApplication mContext;
+    private MeshStackService mContext;
     private short DST;
 
-    public MeshClient(MeshApplication context, short destination) {
+    public MeshClient(MeshStackService context, short destination) {
         mContext = context;
         DST = destination;
         models = new HashSet<>();

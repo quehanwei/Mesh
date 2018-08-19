@@ -14,7 +14,6 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import ru.ximen.meshstack.MeshApplication;
 import ru.ximen.meshstack.MeshCompositionDataProc;
 import ru.ximen.meshstack.MeshConfigurationClient;
 import ru.ximen.meshstack.MeshDevice;
@@ -29,11 +28,13 @@ public class DeviceListAdapter extends BaseAdapter {
     private final Context mContext;
     private final MeshNetwork mNetwork;
     private final LayoutInflater mInflater;
+    private  MeshStackService mStackService;
 
-    public DeviceListAdapter(Context context, MeshNetwork network) {
+    public DeviceListAdapter(Context context, MeshStackService stack) {
         //super(context, resource, textViewResourceId);
         mContext = context;
-        mNetwork = network;
+        mStackService = stack;
+        mNetwork = mStackService.getNetworkManager().getCurrentNetwork();
         mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
@@ -75,7 +76,7 @@ public class DeviceListAdapter extends BaseAdapter {
                     public boolean onMenuItemClick(MenuItem item) {
                         switch (item.getItemId()) {
                             case R.id.configure:
-                                MeshConfigurationClient conf = new MeshConfigurationClient((MeshApplication) (rowView.getContext().getApplicationContext()), getItem(position).getAddress());
+                                MeshConfigurationClient conf = new MeshConfigurationClient(mStackService, getItem(position).getAddress());
                                 ((MeshCompositionDataProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("CompositionData"))).setStatusListner(new MeshProcedure.MeshMessageCallback() {
                                     @Override
                                     public void status(MeshStatusResult result) {

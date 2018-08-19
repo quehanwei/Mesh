@@ -35,7 +35,7 @@ public class MeshAppKeyProc extends MeshProcedure {
     }
 
     public void setStatusListner(MeshMessageCallback statusCallback, MeshMessageCallback listCallback) {
-        mContext.getApplicationContext().getUpperTransportLayer().registerCallback(status_opcode, mContext.getDestination(), statusCallback);
-        mContext.getApplicationContext().getUpperTransportLayer().registerCallback(list_opcode, mContext.getDestination(), listCallback);
+        mContext.getStackService().getUpperTransportLayer().registerCallback(status_opcode, mContext.getDestination(), statusCallback);
+        mContext.getStackService().getUpperTransportLayer().registerCallback(list_opcode, mContext.getDestination(), listCallback);
     }
 }

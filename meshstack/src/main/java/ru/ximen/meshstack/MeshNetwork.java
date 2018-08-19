@@ -27,7 +27,7 @@ import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
  */
 
 public class MeshNetwork {
-    private Context mContext;                       // Application context
+    private MeshStackService mContext;                       // Application context
     private String mNetworkName;
     private byte[] NetKey;
     private short NetKeyIndex;
@@ -48,13 +48,13 @@ public class MeshNetwork {
 
     // TODO: Interface input and output filters
 
-    public MeshNetwork(Context context, MeshManager manager, JSONObject json) {
+    public MeshNetwork(MeshStackService context, MeshManager manager, JSONObject json) {
         provisioned = new ArrayList<>();
         parseJSON(json);
         init(context, manager);
     }
 
-    public MeshNetwork(Context context, MeshManager manager, String name) {
+    public MeshNetwork(MeshStackService context, MeshManager manager, String name) {
         NetKey = new byte[16];
         SecureRandom random = new SecureRandom();
         random.nextBytes(NetKey);
@@ -64,7 +64,7 @@ public class MeshNetwork {
         init(context, manager);
     }
 
-    private void init(Context context, MeshManager manager) {
+    private void init(MeshStackService context, MeshManager manager) {
         mContext = context;
         mManager = manager;
         //NetworkID = MeshEC.k3(Utils.hexString2Bytes("7dd7364cd842ad18c17c2b820c84c3d6")); // test
