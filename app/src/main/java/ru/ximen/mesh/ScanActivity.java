@@ -30,7 +30,7 @@ import ru.ximen.meshstack.MeshApplication;
 import ru.ximen.meshstack.MeshDevice;
 import ru.ximen.meshstack.MeshNetwork;
 import ru.ximen.meshstack.MeshProvisionModel;
-import ru.ximen.meshstack.MeshService;
+import ru.ximen.meshstack.MeshBluetoothService;
 
 public class ScanActivity extends AppCompatActivity {
     private Toolbar toolbar;
@@ -118,14 +118,14 @@ public class ScanActivity extends AppCompatActivity {
                     mScanMenu.findItem(R.id.action_scan).setEnabled(true);
                 }
             }
-        }, MeshService.DEFAULT_SCAN_TIMEOUT);
+        }, MeshBluetoothService.DEFAULT_SCAN_TIMEOUT);
     }
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            if (MeshService.ACTION_GATT_CONNECTED.equals(action)) {
+            if (MeshBluetoothService.ACTION_GATT_CONNECTED.equals(action)) {
                 Log.d(TAG, "Starting device activity");
                 Toast.makeText(context, "Device connected", Toast.LENGTH_SHORT);
                 //Intent newIntent = new Intent(context, DeviceActivity.class);
@@ -203,7 +203,7 @@ public class ScanActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        IntentFilter filter = new IntentFilter(MeshService.ACTION_GATT_CONNECTED);
+        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_GATT_CONNECTED);
         mBroadcastManager.registerReceiver(broadcastReceiver, filter);
     }
 

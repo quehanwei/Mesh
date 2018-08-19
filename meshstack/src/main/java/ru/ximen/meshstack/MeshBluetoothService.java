@@ -30,7 +30,7 @@ import static android.bluetooth.BluetoothGatt.GATT_SUCCESS;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-public class MeshService extends Service {
+public class MeshBluetoothService extends Service {
     protected static int MTU = 20;
     final static public int DEFAULT_SCAN_TIMEOUT = 10000;
     private int mConnectionState = STATE_DISCONNECTED;      // Initial connection state
@@ -65,9 +65,9 @@ public class MeshService extends Service {
     private LocalBroadcastManager mBroadcastManager;
 
     public class LocalBinder extends Binder {
-        MeshService getService() {
+        MeshBluetoothService getService() {
             // Return this instance of LocalService so clients can call public methods
-            return MeshService.this;
+            return MeshBluetoothService.this;
         }
     }
 
@@ -207,7 +207,7 @@ public class MeshService extends Service {
             }
         }, DEFAULT_SCAN_TIMEOUT);
 
-        ScanFilter scanFilter = new ScanFilter.Builder().setServiceUuid(new ParcelUuid(MeshService.MESH_PROVISION_SERVICE)).build();
+        ScanFilter scanFilter = new ScanFilter.Builder().setServiceUuid(new ParcelUuid(MeshBluetoothService.MESH_PROVISION_SERVICE)).build();
         List<ScanFilter> scanFilters = new ArrayList<>();
         scanFilters.add(scanFilter);
         ScanSettings scanSettings = new ScanSettings.Builder().build();

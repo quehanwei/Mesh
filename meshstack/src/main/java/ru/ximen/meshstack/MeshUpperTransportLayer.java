@@ -12,20 +12,20 @@ import org.spongycastle.crypto.InvalidCipherTextException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ru.ximen.meshstack.MeshService.EXTRA_ADDR;
-import static ru.ximen.meshstack.MeshService.EXTRA_DATA;
-import static ru.ximen.meshstack.MeshService.EXTRA_SEQ;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_ADDR;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
+import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 
 public class MeshUpperTransportLayer {
     final static private String TAG = "MeshUpperTransportLayer";
-    private MeshApplication mContext;
+    private MeshStackService mContext;
     private LocalBroadcastManager mBroadcastManger;
     private HashMap<String, MeshProcedure.MeshMessageCallback> callbackHashMap;
 
-    public MeshUpperTransportLayer(MeshApplication context) {
+    public MeshUpperTransportLayer(MeshStackService context) {
         mContext = context;
         callbackHashMap = new HashMap<>();
-        IntentFilter filter = new IntentFilter(MeshService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
+        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
         mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
         mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
     }

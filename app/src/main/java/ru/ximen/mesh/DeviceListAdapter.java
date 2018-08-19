@@ -1,6 +1,8 @@
 package ru.ximen.mesh;
 
+import android.app.Activity;
 import android.content.Context;
+import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.PopupMenu;
 import android.util.Log;
@@ -77,8 +79,12 @@ public class DeviceListAdapter extends BaseAdapter {
                                 ((MeshCompositionDataProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("CompositionData"))).setStatusListner(new MeshProcedure.MeshMessageCallback() {
                                     @Override
                                     public void status(MeshStatusResult result) {
-                                        Log.d(TAG, "Got result: " + Utils.toHexString(result.getData()));
-                                        Snackbar.make(rowView, "CompositionData: " + Utils.toHexString(result.getData()), Snackbar.LENGTH_LONG).setAction("Action", null).show();
+
+                                        MeshConfigurationDialog dlg = new MeshConfigurationDialog();
+                                        Bundle bundle = new Bundle();
+                                        bundle.putByteArray("composition", result.getData());
+                                        dlg.setArguments(bundle);
+                                        dlg.show(((NetworkActivity)mContext).getSupportFragmentManager(), "Configuration");
                                     }
                                 });
                                 ((MeshCompositionDataProc) (conf.getModel(MeshModel.ID_CONFIGURATION_MODEL_CLIENT).procedure("CompositionData"))).get((byte) 0);

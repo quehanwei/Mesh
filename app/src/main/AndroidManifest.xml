@@ -18,7 +18,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <service android:name="ru.ximen.meshstack.MeshService" />
+        <service android:name="ru.ximen.meshstack.MeshBluetoothService" />
 
         <activity android:name=".ScanActivity" />
         <activity
