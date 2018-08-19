@@ -20,7 +20,7 @@ public class MeshStackService extends Service {
 
 
     public class LocalBinder extends Binder {
-        MeshStackService getService() {
+        public MeshStackService getService() {
             return MeshStackService.this;
         }
     }

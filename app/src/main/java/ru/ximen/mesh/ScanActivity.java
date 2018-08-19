@@ -11,7 +11,6 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.ArrayMap;
@@ -26,13 +25,13 @@ import android.widget.ListView;
 import android.widget.Toast;
 import java.util.ArrayList;
 
-import ru.ximen.meshstack.MeshApplication;
 import ru.ximen.meshstack.MeshDevice;
 import ru.ximen.meshstack.MeshNetwork;
 import ru.ximen.meshstack.MeshProvisionModel;
 import ru.ximen.meshstack.MeshBluetoothService;
+import ru.ximen.meshstack.MeshStackService;
 
-public class ScanActivity extends AppCompatActivity {
+public class ScanActivity extends BasicServiceActivty {
     private Toolbar toolbar;
     private ArrayList<String> listItems=new ArrayList<>();
     private ArrayAdapter<String> mLstAdapter;
@@ -45,8 +44,16 @@ public class ScanActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        startService(new Intent(this, MeshStackService.class));
         setContentView(R.layout.activity_scan);
         findViewById(R.id.loadingPanel).setVisibility(View.INVISIBLE);
+        mBroadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
+
+    }
+
+    @Override
+    protected void onServiceAttached(MeshStackService service) {
+        super.onServiceAttached(service);
         final ListView listview = findViewById(R.id.list);
         mLstAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listItems);
         listview.setAdapter(mLstAdapter);
@@ -61,12 +68,10 @@ public class ScanActivity extends AppCompatActivity {
                                     int position, long id) {
                 final String item = (String) parent.getItemAtPosition(position);
                 Toast.makeText(getApplicationContext(), "Connecting device", Toast.LENGTH_LONG).show();
-                ((MeshApplication) getApplicationContext()).getMeshService().connect(mDeviceMap.get(item));
+                mStackService.getMeshService().connect(mDeviceMap.get(item));
             }
 
         });
-        mBroadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
-
     }
 
     @Override
@@ -93,7 +98,7 @@ public class ScanActivity extends AppCompatActivity {
     }
 
     private void scan() {
-        ((MeshApplication) getApplicationContext()).getMeshService().scan(new ScanCallback() {
+        mStackService.getMeshService().scan(new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 super.onScanResult(callbackType, result);
@@ -142,10 +147,7 @@ public class ScanActivity extends AppCompatActivity {
                         String name = input.getText().toString();
 
                         Log.i(TAG, "Starting provision");
-                        ((MeshApplication) getApplicationContext()).
-                                getNetworkManager().
-                                getCurrentNetwork().
-                                provisionDevice(((MeshApplication) getApplicationContext()).getMeshService().getConnectedDevice(),
+                        mStackService.getNetworkManager().getCurrentNetwork().provisionDevice(mStackService.getMeshService().getConnectedDevice(),
                                         name,
                                         new MeshProvisionModel.MeshProvisionGetOOBCallback() {
                                             @Override
@@ -216,7 +218,7 @@ public class ScanActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        ((MeshApplication) getApplicationContext()).getMeshService().disconnect();
+        mStackService.getMeshService().disconnect();
     }
 
     /*@Override

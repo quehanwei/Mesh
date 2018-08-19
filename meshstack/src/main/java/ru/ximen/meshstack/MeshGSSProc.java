@@ -18,6 +18,6 @@ public abstract class MeshGSSProc extends MeshProcedure {
     }
 
     public void setStatusListner(MeshMessageCallback statusCallback) {
-        mContext.getApplicationContext().getUpperTransportLayer().registerCallback(status_opcode, mContext.getDestination(), statusCallback);
+        mContext.getStackService().getUpperTransportLayer().registerCallback(status_opcode, mContext.getDestination(), statusCallback);
     }
 }

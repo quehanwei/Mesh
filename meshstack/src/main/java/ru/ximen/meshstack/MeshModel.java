@@ -11,7 +11,7 @@ public abstract class MeshModel {
     final static public short ID_ONOFF_MODEL_CLIENT = 0x1001;
     final static public short ID_ONOFF_MODEL_SERVER = 0x1000;
 
-    private MeshApplication mContext;
+    private MeshStackService mContext;
     protected short modelID;
     protected short vendorID;
     private List<MeshProcedure> procs;
@@ -19,7 +19,7 @@ public abstract class MeshModel {
     private byte[] mAppKey;
     private boolean aif;
 
-    public MeshModel(MeshApplication context, short modelID, short destination, byte[] appKey) {
+    public MeshModel(MeshStackService context, short modelID, short destination, byte[] appKey) {
         this.modelID = modelID;
         this.mContext = context;
         this.mDestination = destination;
@@ -78,7 +78,7 @@ public abstract class MeshModel {
         return mAppKey;
     }
 
-    public MeshApplication getApplicationContext() {
+    public MeshStackService getStackService() {
         return mContext;
     }
 }
