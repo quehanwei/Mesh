@@ -41,7 +41,6 @@ public class MeshNetwork {
     private MeshProvisionModel mProvisioner;
     private MeshProxyModel mProxy;
     private int SEQ;
-    private LocalBroadcastManager mBroadcastManger;
     private short mAddress = 0x0001;
 
     final static private String TAG = "MeshNetwork";
@@ -69,7 +68,7 @@ public class MeshNetwork {
         mManager = manager;
         //NetworkID = MeshEC.k3(Utils.hexString2Bytes("7dd7364cd842ad18c17c2b820c84c3d6")); // test
         NetworkID = MeshEC.k3(NetKey);
-        mProxy = new MeshProxyModel(mContext);
+        mProxy = mContext.getProxy();
         byte[] t = MeshEC.k2(NetKey, new byte[1]);
         Log.d(TAG, Utils.toHexString(t));
         mNID = (byte) (t[0] & 0x7F);
@@ -80,45 +79,35 @@ public class MeshNetwork {
 
         IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_NETWORK_DATA_AVAILABLE);
         filter.addAction(MeshBluetoothService.ACTION_MESH_BEACON_DATA_AVAILABLE);
-        mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
-        mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
     }
 
-    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            if (action.equals(MeshBluetoothService.ACTION_NETWORK_DATA_AVAILABLE)) {
-                byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
-                Log.d(TAG, "Got network data: " + Utils.toHexString(data));
-                MeshNetworkPDU pdu = new MeshNetworkPDU(MeshNetwork.this, data);
-                Log.d(TAG, "SEQ: " + pdu.getSEQ());
-                if (pdu.isValid()) {
-                    final Intent newIntent = new Intent(MeshBluetoothService.ACTION_TRANSPORT_DATA_AVAILABLE);
-                    newIntent.putExtra(EXTRA_DATA, pdu.getTransportPDU());
-                    newIntent.putExtra(EXTRA_ADDR, pdu.getSRC());
-                    newIntent.putExtra(EXTRA_SEQ, pdu.getSEQ());
-                    mBroadcastManger.sendBroadcast(newIntent);
-                }
-            } else if (action.equals(MeshBluetoothService.ACTION_MESH_BEACON_DATA_AVAILABLE)) {
-                Log.d(TAG, "Got secure network beacon data");
-                byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
-                if (data[0] == 1) {
-                    if ((data[1] & 0x01) == 1) Log.d(TAG, "Key refresh being in progress");
-                    if ((data[1] & 0x02) == 2) Log.d(TAG, "IV update active");
-                    byte[] networkID = new byte[8];
-                    byte[] ivi = new byte[4];
-                    System.arraycopy(data, 2, networkID, 0, 8);
-                    Log.d(TAG, "Network ID: " + Utils.toHexString(networkID));
-                    if (!Arrays.equals(networkID, NetworkID))
-                        Log.e(TAG, "Network ID mismatch! Must be " + Utils.toHexString(NetworkID));
-                    System.arraycopy(data, 10, ivi, 0, 4);
-                    Log.d(TAG, "IV Index: " + Utils.toHexString(ivi));
-                    // Todo: check auth value
-                } else Log.w(TAG, "Unknown Beacon type");
-            }
+    public void newPDU(MeshNetworkPDU pdu){
+        Log.d(TAG, "SEQ: " + pdu.getSEQ());
+        if (pdu.isValid()) {
+            mContext.getTransportLayer().newPDU(new MeshTransportPDU(pdu.getTransportPDU(), pdu.getSEQ()), pdu.getSRC());
         }
-    };
+    }
+
+    public void newPDU(MeshBeaconPDU pdu){
+        Log.d(TAG, "Got secure network beacon data");
+        /*if (data[0] == 1) {
+            if ((data[1] & 0x01) == 1) Log.d(TAG, "Key refresh being in progress");
+            if ((data[1] & 0x02) == 2) Log.d(TAG, "IV update active");
+            byte[] networkID = new byte[8];
+            byte[] ivi = new byte[4];
+            System.arraycopy(data, 2, networkID, 0, 8);
+            Log.d(TAG, "Network ID: " + Utils.toHexString(networkID));
+            if (!Arrays.equals(networkID, NetworkID))
+                Log.e(TAG, "Network ID mismatch! Must be " + Utils.toHexString(NetworkID));
+            System.arraycopy(data, 10, ivi, 0, 4);
+            Log.d(TAG, "IV Index: " + Utils.toHexString(ivi));
+            // Todo: check auth value
+        } else Log.w(TAG, "Unknown Beacon type");*/
+    }
+
+    public void newPDU(MeshProvisionPDU pdu){
+
+    }
 
     public short getAddress() {
         return mAddress;
@@ -202,15 +191,13 @@ public class MeshNetwork {
                                 final String name,
                                 MeshProvisionModel.MeshProvisionGetOOBCallback getOOBCallback,
                                 final MeshProvisionModel.MeshProvisionFinishedOOBCallback finished) {
-        mProvisioner = new MeshProvisionModel(mContext, mProxy, this);
+        mProvisioner = new MeshProvisionModel(mContext);
         mProvisioner.startProvision(device, getOOBCallback, new MeshProvisionModel.MeshProvisionFinishedOOBCallback() {
             @Override
             public void finished(MeshDevice device, MeshNetwork network) {
                 device.setName(name);
                 provisioned.add(device);
                 mManager.updateNetwork();
-                mProvisioner.close();
-                mProxy.close();
             }
         });
     }

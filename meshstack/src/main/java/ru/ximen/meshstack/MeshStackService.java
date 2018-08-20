@@ -14,6 +14,7 @@ public class MeshStackService extends Service {
     private MeshBluetoothService mBluetoothService;
 
     private MeshManager mManager;
+    private MeshProxyModel mProxy;
     private MeshTransportLayer mTransportLayer;
     private MeshUpperTransportLayer mUpperTransportLayer;
     private MeshAppManager mAppManager;
@@ -35,6 +36,7 @@ public class MeshStackService extends Service {
         }
         // Initializing stack objects
         mManager = new MeshManager(this, getFilesDir());
+        mProxy = new MeshProxyModel(this);
         mTransportLayer = new MeshTransportLayer(this);
         mUpperTransportLayer = new MeshUpperTransportLayer(this);
         mAppManager = new MeshAppManager();
@@ -55,7 +57,7 @@ public class MeshStackService extends Service {
         public void onServiceDisconnected(ComponentName className) {}
     };
 
-    public MeshBluetoothService getMeshService() {
+    public MeshBluetoothService getMeshBluetoothService() {
         return mBluetoothService;
     }
 
@@ -73,5 +75,9 @@ public class MeshStackService extends Service {
 
     public MeshUpperTransportLayer getUpperTransportLayer() {
         return mUpperTransportLayer;
+    }
+
+    public MeshProxyModel getProxy() {
+        return mProxy;
     }
 }

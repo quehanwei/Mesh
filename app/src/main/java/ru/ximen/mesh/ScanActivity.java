@@ -68,7 +68,7 @@ public class ScanActivity extends BasicServiceActivty {
                                     int position, long id) {
                 final String item = (String) parent.getItemAtPosition(position);
                 Toast.makeText(getApplicationContext(), "Connecting device", Toast.LENGTH_LONG).show();
-                mStackService.getMeshService().connect(mDeviceMap.get(item));
+                mStackService.getMeshBluetoothService().connect(mDeviceMap.get(item));
             }
 
         });
@@ -98,7 +98,7 @@ public class ScanActivity extends BasicServiceActivty {
     }
 
     private void scan() {
-        mStackService.getMeshService().scan(new ScanCallback() {
+        mStackService.getMeshBluetoothService().scan(new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 super.onScanResult(callbackType, result);
@@ -147,7 +147,7 @@ public class ScanActivity extends BasicServiceActivty {
                         String name = input.getText().toString();
 
                         Log.i(TAG, "Starting provision");
-                        mStackService.getNetworkManager().getCurrentNetwork().provisionDevice(mStackService.getMeshService().getConnectedDevice(),
+                        mStackService.getNetworkManager().getCurrentNetwork().provisionDevice(mStackService.getMeshBluetoothService().getConnectedDevice(),
                                         name,
                                         new MeshProvisionModel.MeshProvisionGetOOBCallback() {
                                             @Override
@@ -218,7 +218,7 @@ public class ScanActivity extends BasicServiceActivty {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mStackService.getMeshService().disconnect();
+        mStackService.getMeshBluetoothService().disconnect();
     }
 
     /*@Override

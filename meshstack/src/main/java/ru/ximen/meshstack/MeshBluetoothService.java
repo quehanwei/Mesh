@@ -23,6 +23,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -63,12 +64,21 @@ public class MeshBluetoothService extends Service {
     private BluetoothGattCharacteristic mProxyCharacteristic;
     private BluetoothGatt mBluetoothGatt;
     private LocalBroadcastManager mBroadcastManager;
+    private HashMap<UUID, MeshCharacteristicChangedCallback> mCharacteristicCallbackMap;
 
     public class LocalBinder extends Binder {
         MeshBluetoothService getService() {
             // Return this instance of LocalService so clients can call public methods
             return MeshBluetoothService.this;
         }
+    }
+
+    public interface MeshCharacteristicChangedCallback {
+        void onCharacteristicChanged(byte[] data);
+    }
+
+    public void registerCallback(UUID characteristic, MeshCharacteristicChangedCallback callback){
+        mCharacteristicCallbackMap.put(characteristic, callback);
     }
 
     public final BluetoothGattCallback mGattCallback =
@@ -95,14 +105,8 @@ public class MeshBluetoothService extends Service {
 
                 @Override
                 public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-                    if (characteristic.getUuid().equals(MESH_PROXY_DATA_OUT)) {
-                        broadcastUpdate(ACTION_PROXY_DATA_AVAILABLE, characteristic);
-                        Log.d(TAG, "Proxy characteristic changed");
-                    } else if (characteristic.getUuid().equals(MESH_PROVISION_DATA_OUT)) {
-                        broadcastUpdate(ACTION_PROXY_DATA_AVAILABLE, characteristic);
-                        Log.d(TAG, "Provision characteristic changed");
-                    }
-                    //Log.d(TAG, "Characteristic " + characteristic.getUuid().toString() + " changed");
+                    MeshCharacteristicChangedCallback callback = mCharacteristicCallbackMap.get(characteristic.getUuid());
+                    if (callback != null) callback.onCharacteristicChanged(characteristic.getValue());
                 }
 
                 @Override
@@ -152,16 +156,6 @@ public class MeshBluetoothService extends Service {
 
     private void broadcastUpdate(final String action) {
         final Intent intent = new Intent(action);
-        mBroadcastManager.sendBroadcast(intent);
-    }
-
-    private void broadcastUpdate(final String action, final BluetoothGattCharacteristic characteristic) {
-        final Intent intent = new Intent(action);
-        final byte[] data = characteristic.getValue();
-        Log.d(TAG, "Data: " + Utils.toHexString(data));
-        if (data != null && data.length > 0) {
-            intent.putExtra(EXTRA_DATA, data);
-        }
         mBroadcastManager.sendBroadcast(intent);
     }
 
@@ -228,6 +222,7 @@ public class MeshBluetoothService extends Service {
     public void onCreate() {
         super.onCreate();
         mBroadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
+        mCharacteristicCallbackMap = new HashMap<>();
     }
 
     @Nullable

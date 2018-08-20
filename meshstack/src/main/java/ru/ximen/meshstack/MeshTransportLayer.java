@@ -18,7 +18,6 @@ public class MeshTransportLayer {
     final static private String TAG = "MeshTransportLayer";
     private byte defaultTTL = 20;
     private MeshStackService mContext;
-    private LocalBroadcastManager mBroadcastManger;
     //private HashSet<Short, MeshTransportPDU> sendQueue;
     private HashMap<Short, ArrayList<MeshTransportPDU>> receiveQueue;
 
@@ -26,40 +25,7 @@ public class MeshTransportLayer {
         mContext = context;
         receiveQueue = new HashMap<>();
         IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_TRANSPORT_DATA_AVAILABLE);
-        mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
-        mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
     }
-
-    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
-            Log.d(TAG, "Got transport data: " + Utils.toHexString(data));
-            short addr = intent.getShortExtra(EXTRA_ADDR, (short) 0);
-            int SEQ = intent.getIntExtra(EXTRA_SEQ, 0);
-            MeshTransportPDU pdu = new MeshTransportPDU(data, SEQ);
-            if (pdu.isComplete()) {
-                Log.d(TAG, "Complete PDU: " + Utils.toHexString(pdu.getAccessData()));
-                final Intent newIntent = new Intent(MeshBluetoothService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
-                newIntent.putExtra(EXTRA_DATA, pdu.data());
-                newIntent.putExtra(EXTRA_ADDR, addr);
-                newIntent.putExtra(EXTRA_SEQ, SEQ);
-                mBroadcastManger.sendBroadcast(newIntent);
-            } else {
-                Log.d(TAG, "Uncomplete PDU: " + Utils.toHexString(pdu.data()));
-                ArrayList<MeshTransportPDU> set = receiveQueue.get(addr);
-                if (null == set) {
-                    //Log.d(TAG, "Creating new queue for " + addr);
-                    set = new ArrayList<>();
-                    receiveQueue.put(addr, set);
-                }
-                set.add(pdu.getSegO(), pdu);
-                //Log.d(TAG, "Adding incomplete pdu to index " + pdu.getSegO());
-                if (pdu.isLast()) processQueued(addr, pdu.getSegN());
-            }
-        }
-    };
 
     private void processQueued(short addr, byte SegN) {
         //Log.d(TAG, "Processing queue for " + addr + " and SegN " + SegN);
@@ -85,11 +51,7 @@ public class MeshTransportLayer {
         tpdu.setData(result);
         Log.d(TAG, "Big PDU: " + Utils.toHexString(tpdu.data()));
 
-        final Intent newIntent = new Intent(MeshBluetoothService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
-        newIntent.putExtra(EXTRA_DATA, tpdu.data());
-        newIntent.putExtra(EXTRA_ADDR, addr);
-        newIntent.putExtra(EXTRA_SEQ, tpdu.getSEQ());
-        mBroadcastManger.sendBroadcast(newIntent);
+        mContext.getUpperTransportLayer().newPDU(new MeshUpperTransportPDU(tpdu), addr, tpdu.getSZMIC());
     }
 
     private void sendAck(short SeqZero, short addr, int blockAck) {
@@ -124,5 +86,23 @@ public class MeshTransportLayer {
             //Log.d(TAG, "Network PDU: " + Utils.toHexString(npdu.data()));
             mContext.getNetworkManager().getCurrentNetwork().sendPDU(npdu);
         }
+    }
+
+    public void newPDU(MeshTransportPDU pdu, short addr){
+        if (pdu.isComplete()) {
+            Log.d(TAG, "Complete PDU: " + Utils.toHexString(pdu.getAccessData()));
+            mContext.getUpperTransportLayer().newPDU(new MeshUpperTransportPDU(pdu), addr, pdu.getSZMIC());
+        } else {
+            Log.d(TAG, "Uncomplete PDU: " + Utils.toHexString(pdu.data()));
+            ArrayList<MeshTransportPDU> set = receiveQueue.get(addr);
+            if (null == set) {
+                set = new ArrayList<>();
+                receiveQueue.put(addr, set);
+            }
+            set.add(pdu.getSegO(), pdu);
+            //Log.d(TAG, "Adding incomplete pdu to index " + pdu.getSegO());
+            if (pdu.isLast()) processQueued(addr, pdu.getSegN());
+        }
+
     }
 }

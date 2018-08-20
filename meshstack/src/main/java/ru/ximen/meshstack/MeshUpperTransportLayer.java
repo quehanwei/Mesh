@@ -19,66 +19,13 @@ import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 public class MeshUpperTransportLayer {
     final static private String TAG = "MeshUpperTransportLayer";
     private MeshStackService mContext;
-    private LocalBroadcastManager mBroadcastManger;
     private HashMap<String, MeshProcedure.MeshMessageCallback> callbackHashMap;
 
     public MeshUpperTransportLayer(MeshStackService context) {
         mContext = context;
         callbackHashMap = new HashMap<>();
         IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
-        mBroadcastManger = LocalBroadcastManager.getInstance(mContext);
-        mBroadcastManger.registerReceiver(mGattUpdateReceiver, filter);
     }
-
-    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
-            short addr = intent.getShortExtra(EXTRA_ADDR, (short) 0);
-            int SEQ = intent.getIntExtra(EXTRA_SEQ, 0);
-            MeshTransportPDU tpdu = new MeshTransportPDU(data, SEQ);
-            MeshUpperTransportPDU pdu = new MeshUpperTransportPDU(tpdu);
-            byte[] encData = pdu.data();
-            if (pdu.getAKF()) {
-                // Todo: AppKey
-            } else {
-                // DevKey
-                byte[] key = mContext.getNetworkManager().getCurrentNetwork().getDeviceKey(addr);
-                byte[] nonce = getNonce(mContext.getNetworkManager().getCurrentNetwork(), addr, mContext.getNetworkManager().getCurrentNetwork().getAddress(), pdu.getSEQ(), tpdu.getSZMIC(), false);
-                byte[] unencData = null;
-                try {
-                    unencData = MeshEC.AES_CCM_Decrypt(key, nonce, encData, tpdu.getSZMIC() ? 64 : 32);
-                } catch (InvalidCipherTextException e) {
-                    e.printStackTrace();
-                }
-                //Log.d(TAG, "Decrypted Data: " + Utils.toHexString(unencData));
-                byte[] opcode = getOpcode(unencData);
-                //Log.d(TAG, "Opcode: " + Utils.toHexString(opcode));
-                byte[] accessData = new byte[unencData.length - opcode.length];
-                System.arraycopy(unencData, opcode.length, accessData, 0, accessData.length);
-                //Log.d(TAG, "Data: " + Utils.toHexString(accessData));
-
-                MeshProcedure.MeshMessageCallback callback = callbackHashMap.get(callbackKey(opcode, addr));
-
-                for (Map.Entry<String, MeshProcedure.MeshMessageCallback> entry : callbackHashMap.entrySet()) {
-                    String tkey = entry.getKey();
-                    MeshProcedure.MeshMessageCallback value = entry.getValue();
-                    Log.d(TAG, tkey);
-                    Log.d(TAG, value.toString());
-                }
-
-
-                if (!(null == callback)) {
-                    MeshStatusResult result = new MeshStatusResult();
-                    result.setData(accessData);
-                    callback.status(result);
-                } else {
-                    Log.d(TAG, "Callback not fount for " + Utils.toHexString(opcode) + " and " + addr);
-                }
-            }
-        }
-    };
 
     private byte[] getOpcode(byte[] data) {
         byte[] result = null;
@@ -130,5 +77,46 @@ public class MeshUpperTransportLayer {
         key[opcode.length + 1] = (byte) (DST & 0xff);
         Log.d(TAG, "Callback key " + Utils.toHexString(key));
         return Utils.toHexString(key);
+    }
+
+    public void newPDU(MeshUpperTransportPDU pdu, short addr, boolean SZMIC) {
+        byte[] encData = pdu.data();
+        if (pdu.getAKF()) {
+            // Todo: AppKey
+        } else {
+            // DevKey
+            byte[] key = mContext.getNetworkManager().getCurrentNetwork().getDeviceKey(addr);
+            byte[] nonce = getNonce(mContext.getNetworkManager().getCurrentNetwork(), addr, mContext.getNetworkManager().getCurrentNetwork().getAddress(), pdu.getSEQ(), SZMIC, false);
+            byte[] unencData = null;
+            try {
+                unencData = MeshEC.AES_CCM_Decrypt(key, nonce, encData, SZMIC ? 64 : 32);
+            } catch (InvalidCipherTextException e) {
+                e.printStackTrace();
+            }
+            //Log.d(TAG, "Decrypted Data: " + Utils.toHexString(unencData));
+            byte[] opcode = getOpcode(unencData);
+            //Log.d(TAG, "Opcode: " + Utils.toHexString(opcode));
+            byte[] accessData = new byte[unencData.length - opcode.length];
+            System.arraycopy(unencData, opcode.length, accessData, 0, accessData.length);
+            //Log.d(TAG, "Data: " + Utils.toHexString(accessData));
+
+            MeshProcedure.MeshMessageCallback callback = callbackHashMap.get(callbackKey(opcode, addr));
+
+            for (Map.Entry<String, MeshProcedure.MeshMessageCallback> entry : callbackHashMap.entrySet()) {
+                String tkey = entry.getKey();
+                MeshProcedure.MeshMessageCallback value = entry.getValue();
+                Log.d(TAG, tkey);
+                Log.d(TAG, value.toString());
+            }
+
+
+            if (!(null == callback)) {
+                MeshStatusResult result = new MeshStatusResult();
+                result.setData(accessData);
+                callback.status(result);
+            } else {
+                Log.d(TAG, "Callback not fount for " + Utils.toHexString(opcode) + " and " + addr);
+            }
+        }
     }
 }
