@@ -24,12 +24,10 @@ public class MeshProxyModel {
     final static private String TAG = MeshProxyModel.class.getSimpleName();
     private ArrayList<Byte> mData;
     private boolean transactionRx;
-    private boolean transactionTx;
 
     public MeshProxyModel(MeshStackService context) {
         mContext = context;
         Log.d(TAG, "Binding service");
-        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_PROXY_DATA_AVAILABLE);
         mData = new ArrayList<>();
         mContext.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROXY_DATA_OUT, new MeshBluetoothService.MeshCharacteristicChangedCallback() {
             @Override

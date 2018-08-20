@@ -17,7 +17,7 @@ import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
 import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 
 public class MeshUpperTransportLayer {
-    final static private String TAG = "MeshUpperTransportLayer";
+    final static private String TAG = MeshUpperTransportLayer.class.getSimpleName();
     private MeshStackService mContext;
     private HashMap<String, MeshProcedure.MeshMessageCallback> callbackHashMap;
 

@@ -22,7 +22,7 @@ public final class MeshManager {
     private MeshStackService mContext;
     private File mDirectory;
     private MeshNetwork currentNetwork;
-    final static private String TAG = "MeshManager";
+    final static private String TAG = MeshManager.class.getSimpleName();
 
     public MeshManager(MeshStackService mContext, File directory) {
         this.mContext = mContext;

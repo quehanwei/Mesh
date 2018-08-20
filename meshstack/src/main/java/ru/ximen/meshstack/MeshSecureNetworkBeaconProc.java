@@ -7,7 +7,7 @@ public class MeshSecureNetworkBeaconProc extends MeshGSSProc {
 
     final static public byte SECURE_NETWORK_BEACON_NOT_BROADCASTING = 0x00;
     final static public byte SECURE_NETWORK_BEACON_BROADCASTING = 0x01;
-    final static private String TAG = "MeshSecureNetworkBeacon";
+    final static private String TAG = MeshSecureNetworkBeaconProc.class.getSimpleName();
 
     public void get() {
         super.get(new byte[0]);

@@ -1,7 +1,7 @@
 package ru.ximen.meshstack;
 
 public class MeshTransportPDU extends MeshPDU {
-    final static private String TAG = "MeshTransportPDU";
+    final static private String TAG = MeshTransportPDU.class.getSimpleName();
     private byte[] mData;
     private boolean SEG;
     private boolean AKF;
@@ -79,13 +79,11 @@ public class MeshTransportPDU extends MeshPDU {
 
 
     public boolean isComplete() {
-        if (!SEG) return true;
-        else return false;
+        return !SEG;
     }
 
     public boolean isLast() {
-        if (SegO == SegN) return true;
-        else return false;
+        return SegO == SegN;
     }
 
     public int getSEQ() {

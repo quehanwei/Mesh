@@ -3,7 +3,7 @@ package ru.ximen.meshstack;
 import android.util.Pair;
 
 public abstract class MeshProcedure {
-    final static private String TAG = "MeshProcedure";
+    final static private String TAG = MeshProcedure.class.getSimpleName();
     protected String name;
     protected MeshModel mContext;
     private int SEQ;

@@ -58,7 +58,7 @@ public class MeshBluetoothService extends Service {
     public final static String EXTRA_DATA = "ru.ximen.mesh.le.EXTRA_DATA";
     public final static String EXTRA_ADDR = "ru.ximen.mesh.le.EXTRA_ADDR";
     public final static String EXTRA_SEQ = "ru.ximen.mesh.le.EXTRA_SEQ";
-    final static private String TAG = "MeshService";
+    final static private String TAG = MeshBluetoothService.class.getSimpleName();
 
     private BluetoothGattCharacteristic mProvisionCharacteristic;
     private BluetoothGattCharacteristic mProxyCharacteristic;
