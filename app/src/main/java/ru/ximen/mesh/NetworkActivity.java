@@ -62,7 +62,7 @@ public class NetworkActivity extends BasicServiceActivty {
                 final MeshDevice item = (MeshDevice) parent.getItemAtPosition(position);
                 Log.d(TAG, item.getName());
                 Toast.makeText(getApplicationContext(), "Connecting device " + item.getName(), Toast.LENGTH_LONG).show();
-                mStackService.getMeshService().connect(item);
+                mStackService.getMeshBluetoothService().connect(item);
             }
 
         });
@@ -78,10 +78,10 @@ public class NetworkActivity extends BasicServiceActivty {
 
     @Override
     protected void onStart() {
-        if (!mStackService.getMeshService().isConnected()) {
+        if (!mStackService.getMeshBluetoothService().isConnected()) {
             Toast.makeText(this, "Connecting to network " + mNetwork.getName(), Toast.LENGTH_SHORT).show();
             if (mNetwork.getDevices().size() > 0)
-                mStackService.getMeshService().connect(findProxy());
+                mStackService.getMeshBluetoothService().connect(findProxy());
         }
         super.onStart();
     }

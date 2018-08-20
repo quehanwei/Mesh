@@ -21,20 +21,73 @@ import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
 
 public class MeshProxyModel {
     private final MeshStackService mContext;
-    final static private String TAG = "MeshProxy";
-    private LocalBroadcastManager mBroadcastManager;
-    private List<Byte> mData;
+    final static private String TAG = MeshProxyModel.class.getSimpleName();
+    private ArrayList<Byte> mData;
     private boolean transactionRx;
     private boolean transactionTx;
-    private boolean mBound;
 
     public MeshProxyModel(MeshStackService context) {
         mContext = context;
         Log.d(TAG, "Binding service");
         IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_PROXY_DATA_AVAILABLE);
-        mBroadcastManager = LocalBroadcastManager.getInstance(mContext);
-        mBroadcastManager.registerReceiver(mGattUpdateReceiver, filter);
         mData = new ArrayList<>();
+        mContext.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROXY_DATA_OUT, new MeshBluetoothService.MeshCharacteristicChangedCallback() {
+            @Override
+            public void onCharacteristicChanged(byte[] data) {
+                byte type = (byte) (data[0] & 0x3f);        // 6.3.1
+                byte sar = (byte) (data[0] >>> 6);            // 6.3.1
+                switch (sar) {
+                    case 0:         // complete message
+                        if (!transactionRx) {
+                            mData.clear();
+                            transactionRx = false;
+                        } else {
+                            return;
+                        }
+                        break;
+                    case 1:
+                        if (!transactionRx) {
+                            mData.clear();
+                            transactionRx = true;
+                        } else {
+                            return;
+                        }
+                        break;
+                    case -2:
+                        if (!transactionRx) {
+                            return;
+                        }
+                        break;
+                    case -1:
+                        if (transactionRx) {
+                            transactionRx = false;
+                        } else {
+                            return;
+                        }
+                        break;
+                }
+                for (int i = 1; i < data.length; i++) mData.add(data[i]);
+                if (!transactionRx) {
+                    MeshNetwork network = mContext.getNetworkManager().getCurrentNetwork();
+                    switch (type) {
+                        case 0x00:
+                            network.newPDU(new MeshNetworkPDU(network, toArray(mData)));
+                            break;
+                        case 0x01:
+                            network.newPDU(new MeshBeaconPDU(toArray(mData)));
+                            break;
+                        case 0x02:
+                            //broadcastUpdate(MeshBluetoothService.ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE);
+                            break;
+                        case 0x03:
+                            network.newPDU(new MeshProvisionPDU(toArray(mData)));
+                            break;
+                        default:
+                            Log.d(TAG, "PDU of unknown type received");
+                    }
+                }
+            }
+        });
     }
 
     public void send(MeshPDU pdu) {
@@ -82,94 +135,16 @@ public class MeshProxyModel {
         System.arraycopy(data, 0, params, 1, data.length);
         Log.d(TAG, "Sending: " + new BigInteger(1, params).toString(16));
         if ((sar & 0x3f) == 3) {
-            mContext.getMeshService().writeProvision(params);
+            mContext.getMeshBluetoothService().writeProvision(params);
         } else {
-            mContext.getMeshService().writeProxy(params);
+            mContext.getMeshBluetoothService().writeProxy(params);
         }
     }
 
-    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            byte[] data = intent.getByteArrayExtra(EXTRA_DATA);
-            byte type = (byte) (data[0] & 0x3f);        // 6.3.1
-            byte sar = (byte) (data[0] >>> 6);            // 6.3.1
-            switch (sar) {
-                case 0:         // complete message
-                    if (!transactionRx) {
-                        //Log.d(TAG, "Reconstructing complete PDU from data " + Utils.toHexString(data));
-                        mData.clear();
-                        transactionRx = false;
-                    } else {
-                        //Log.d(TAG, "Complete PDU while waiting segment: " + Utils.toHexString(data));
-                        return;
-                    }
-                    break;
-                case 1:
-                    if (!transactionRx) {
-                        //Log.d(TAG, "Reconstructing first PDU segment from data " + Utils.toHexString(data));
-                        mData.clear();
-                        transactionRx = true;
-                    } else {
-                        //Log.d(TAG, "First PDU while waiting segment: " + Utils.toHexString(data));
-                        return;
-                    }
-                    break;
-                case -2:
-                    if (transactionRx) {
-                        //Log.d(TAG, "Reconstructing PDU segment from data " + Utils.toHexString(data));
-                        transactionRx = true;
-                    } else {
-                        //Log.d(TAG, "Segment PDU without first: " + Utils.toHexString(data));
-                        return;
-                    }
-                    break;
-                case -1:
-                    if (transactionRx) {
-                        Log.d(TAG, "Reconstructing last PDU segment from data " + Utils.toHexString(data));
-                        transactionRx = false;
-                    } else {
-                        Log.d(TAG, "Last PDU without first: " + Utils.toHexString(data));
-                        return;
-                    }
-                    break;
-            }
-            for (int i = 1; i < data.length; i++) mData.add(data[i]);
-            if (!transactionRx) {
-                switch (type) {
-                    case 0x00:
-                        broadcastUpdate(MeshBluetoothService.ACTION_NETWORK_DATA_AVAILABLE);
-                        break;
-                    case 0x01:
-                        broadcastUpdate(MeshBluetoothService.ACTION_MESH_BEACON_DATA_AVAILABLE);
-                        break;
-                    case 0x02:
-                        broadcastUpdate(MeshBluetoothService.ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE);
-                        break;
-                    case 0x03:
-                        broadcastUpdate(MeshBluetoothService.ACTION_PROVISION_DATA_AVAILABLE);
-                        break;
-                    default:
-                        Log.d(TAG, "PDU of unknown type received");
-                }
-            }
-        }
-    };
-
-    private void broadcastUpdate(final String action) {
-        final Intent intent = new Intent(action);
-        if (mData != null && mData.size() > 0) {
-            byte[] result = new byte[mData.size()];
-            for (int i = 0; i < mData.size(); i++) result[i] = mData.get(i);
-            intent.putExtra(EXTRA_DATA, result);
-        }
-        mBroadcastManager.sendBroadcast(intent);
+    private byte[] toArray(ArrayList<Byte> data) {
+        byte[] result = new byte[data.size()];
+        for (int i = 0; i < data.size(); i++) result[i] = data.get(i);
+        return result;
     }
-
-    public void close() {
-        mBroadcastManager.unregisterReceiver(mGattUpdateReceiver);
-    }
-
 }
 
