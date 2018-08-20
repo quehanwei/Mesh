@@ -8,7 +8,7 @@ import org.spongycastle.crypto.InvalidCipherTextException;
 import java.nio.ByteBuffer;
 
 public class MeshNetworkPDU extends MeshPDU {
-    final static private String TAG = "MeshNetworkPDU";
+    final static private String TAG = MeshNetworkPDU.class.getSimpleName();
     private boolean mValid;
     private byte IVI;
     private byte NID;

@@ -80,17 +80,16 @@ public class MeshEC {
         return peerPKey;
     }
 
-    static byte[] s1(byte[] input) {
+    public static byte[] s1(byte[] input) {
         return AES_CMAC(input, new byte[16]);
     }
 
-    static public byte[] k1(byte[] N, byte[] salt, byte[] P) {
+    public static byte[] k1(byte[] N, byte[] salt, byte[] P) {
         byte[] T = AES_CMAC(N, salt);
-        byte[] result = AES_CMAC(P, T);
-        return result;
+        return AES_CMAC(P, T);
     }
 
-    static public byte[] k2(byte[] N, byte[] P) {
+    public static byte[] k2(byte[] N, byte[] P) {
         //Log.d(TAG, "k2 N:" + Utils.toHexString(N));
         //Log.d(TAG, "k2 P:" + Utils.toHexString(P));
         byte[] salt = s1("smk2".getBytes());
@@ -162,7 +161,7 @@ public class MeshEC {
         return signed[0];
     }
 
-    static public byte[] AES_CMAC(byte[] P, byte[] T) {
+    public static byte[] AES_CMAC(byte[] P, byte[] T) {
         byte[] R = new byte[16];
         CMac macT = new CMac(new AESEngine());
         macT.init(new KeyParameter(T));
@@ -171,7 +170,7 @@ public class MeshEC {
         return R;
     }
 
-    static public Pair<byte[], byte[]> AES_CCM(byte[] key, byte[] nonce, byte[] data, int macSize) {
+    public static Pair<byte[], byte[]> AES_CCM(byte[] key, byte[] nonce, byte[] data, int macSize) {
         CCMBlockCipher cipher = new CCMBlockCipher(new AESEngine());
         cipher.init(true, new AEADParameters(new KeyParameter(key), macSize, nonce));
         byte[] outputText = new byte[cipher.getOutputSize(data.length)];
@@ -188,7 +187,7 @@ public class MeshEC {
         return new Pair<>(out, mic);
     }
 
-    static public byte[] AES_CCM_Decrypt(byte[] key, byte[] nonce, byte[] data, int macSize) throws InvalidCipherTextException {
+    public static byte[] AES_CCM_Decrypt(byte[] key, byte[] nonce, byte[] data, int macSize) throws InvalidCipherTextException {
         CCMBlockCipher cipher = new CCMBlockCipher(new AESEngine());
         cipher.init(false, new AEADParameters(new KeyParameter(key), macSize, nonce));
         byte[] outputText = new byte[cipher.getOutputSize(data.length)];
@@ -197,7 +196,7 @@ public class MeshEC {
         return outputText;
     }
 
-    static public byte[] e(byte[] key, byte[] data) {
+    public static byte[] e(byte[] key, byte[] data) {
         byte[] out = new byte[16];       // 128 bit
         AESEngine engine = new AESEngine();
         engine.init(true, new KeyParameter(key));

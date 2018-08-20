@@ -3,7 +3,7 @@ package ru.ximen.meshstack;
 import android.util.Log;
 
 public class MeshConfigurationClient extends MeshClient {
-    final static private String TAG = "MeshConfigurationClient";
+    final static private String TAG = MeshConfigurationClient.class.getSimpleName();
 
     public MeshConfigurationClient(MeshStackService context, short destination) {
         super(context, destination);

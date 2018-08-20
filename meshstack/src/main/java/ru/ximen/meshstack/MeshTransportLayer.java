@@ -15,7 +15,7 @@ import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
 import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 
 public class MeshTransportLayer {
-    final static private String TAG = "MeshTransportLayer";
+    final static private String TAG = MeshTransportLayer.class.getSimpleName();
     private byte defaultTTL = 20;
     private MeshStackService mContext;
     //private HashSet<Short, MeshTransportPDU> sendQueue;

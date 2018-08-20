@@ -3,7 +3,7 @@ package ru.ximen.meshstack;
 import android.util.Log;
 
 public class MeshConfigurationModel extends MeshModel {
-    final static private String TAG = "MeshConfigurationModel";
+    final static private String TAG = MeshConfigurationModel.class.getSimpleName();
 
     public MeshConfigurationModel(MeshStackService context, short destination) {
         super(context, MeshModel.ID_CONFIGURATION_MODEL_CLIENT, destination, null);

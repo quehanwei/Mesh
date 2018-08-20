@@ -26,7 +26,7 @@ public class MeshProvisionModel {
     private final MeshStackService mContext;
     private final MeshProxyModel mProxy;
 
-    final static private String TAG = "MeshProvision";
+    final static private String TAG = MeshProvisionModel.class.getSimpleName();
 
     private byte mAlgorithm;
     private byte mPKeyType;
@@ -67,7 +67,7 @@ public class MeshProvisionModel {
         void gotOOB(String oob);
     }
 
-    public MeshProvisionModel(MeshStackService context) {
+    MeshProvisionModel(MeshStackService context) {
         mNetwork = context.getNetworkManager().getCurrentNetwork();
         mContext = context;
         mProxy = mContext.getProxy();
@@ -309,12 +309,12 @@ public class MeshProvisionModel {
     }
 
     private void addInput(byte[] data) {
-        for (int i = 0; i < data.length; i++) confirmationInputs.add(data[i]);
+        for (byte aData : data) confirmationInputs.add(aData);
     }
 
-    public byte[] getConfirmation(byte[] inputs, byte[] authValue) {
+    private byte[] getConfirmation(byte[] inputs, byte[] authValue) {
         mAuthValue = authValue;
-        byte[] mConfirmationSalt = MeshEC.s1(inputs);
+        mConfirmationSalt = MeshEC.s1(inputs);
         //Log.d(TAG, "Confirmation salt: " + Utils.toHexString(mConfirmationSalt));
         byte[] mConfirmationKey = MeshEC.k1(secret, mConfirmationSalt, "prck".getBytes());
         //Log.d(TAG, "Confirmation key: " + Utils.toHexString(mConfirmationSalt));
@@ -332,7 +332,7 @@ public class MeshProvisionModel {
         return mConfirmation;
     }
 
-    public byte[] remoteConfirmation(byte[] randomBytes) {
+    private byte[] remoteConfirmation(byte[] randomBytes) {
         byte[] randomAuth = new byte[32];
         System.arraycopy(randomBytes, 0, randomAuth, 0, 16);
         System.arraycopy(mAuthValue, 0, randomAuth, 16, 16);
@@ -344,20 +344,15 @@ public class MeshProvisionModel {
         return confirmation;
     }
 
-    public byte[] getProvisionData(byte[] data, byte[] peerRandom) {
+    private byte[] getProvisionData(byte[] data, byte[] peerRandom) {
         byte[] saltData = new byte[48];
         System.arraycopy(mConfirmationSalt, 0, saltData, 0, 16);
         System.arraycopy(mRandomBytes, 0, saltData, 16, 16);
         System.arraycopy(peerRandom, 0, saltData, 32, 16);
-        //Log.d(TAG, " > ProvisionInputs: " + Utils.toHexString(saltData));
         provisionSalt = MeshEC.s1(saltData);
-        //Log.d(TAG, " > ProvisionSalt: " + Utils.toHexString(provisionSalt));
         byte[] sessionKey = MeshEC.k1(secret, provisionSalt, "prsk".getBytes());
-        //Log.d(TAG, " > SessionKey: " + Utils.toHexString(sessionKey));
         byte[] sessionNonce = new byte[13];
         System.arraycopy(MeshEC.k1(secret, provisionSalt, "prsn".getBytes()), 3, sessionNonce, 0, 13);
-        //Log.d(TAG, " > Nonce: " + Utils.toHexString(sessionNonce));
-        //Log.d(TAG, " > ProvisionData: " + Utils.toHexString(data));
 
         Pair<byte[], byte[]> t = MeshEC.AES_CCM(sessionKey, sessionNonce, data, 64);
         byte[] out = new byte[25 + 8];

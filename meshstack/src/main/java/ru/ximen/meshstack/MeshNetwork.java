@@ -43,7 +43,7 @@ public class MeshNetwork {
     private int SEQ;
     private short mAddress = 0x0001;
 
-    final static private String TAG = "MeshNetwork";
+    final static private String TAG = MeshNetwork.class.getSimpleName();
 
     // TODO: Interface input and output filters
 
