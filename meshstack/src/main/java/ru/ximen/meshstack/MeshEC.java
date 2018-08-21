@@ -29,7 +29,7 @@ import javax.crypto.KeyAgreement;
  * Utility class implementing elliptic curves cryptography functions.
  * All functions are static.
  *
- * Created by ximen on 07.04.18.
+ * @author Sergey Novgorodov on 07.04.18.
  */
 public class MeshEC {
     final static private String TAG = MeshEC.class.getSimpleName();
@@ -97,9 +97,10 @@ public class MeshEC {
     }
 
     /**
-     * Salt generation function. The output of the salt generation function s1 is as follows:
-     * s1(input) = AES-CMAC<sub>ZERO</sub>(input) where ZERO is 128-bit value of 0x0000 0000 0000 0000 0000 0000 0000 0000
-     * @see 3.8.2.4 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a>
+     * <p>Salt generation function. The output of the salt generation function s1 is as follows:</p>
+     * <p><i>s1(input) = AES-CMAC<sub>ZERO</sub>(input)</i></p>
+     * <p>where ZERO is 128-bit value of 0x0000 0000 0000 0000 0000 0000 0000 0000</p>
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a> 3.8.2.4
      *
      * @param input non-zero length octet array
      * @return salt value
@@ -109,11 +110,13 @@ public class MeshEC {
     }
 
     /**
-     * The network key material derivation function k1 is used to generate instances of IdentityKey and BeaconKey.
+     * <p>The network key material derivation function k1 is used to generate instances of IdentityKey and BeaconKey.
      * The definition of this key generation function makes use of the MAC function AES-CMAC<sub>T</sub> with a 128-bit key T.
-     * The key T is computed as follows: T = AES-CMAC<sub>salt</sub>(N).
-     * The output of the key generation function k1 is as follows: k1(N, salt, P) = AES-CMAC<sub>T</sub>(P).
-     * @see 3.8.2.5 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a>
+     * The key T is computed as follows:</p>
+     * <p><i>T = AES-CMAC<sub>salt</sub>(N).</i></p>
+     * <p>The output of the key generation function k1 is as follows:</p>
+     * <p><i>k1(N, salt, P) = AES-CMAC<sub>T</sub>(P).</i></p>
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a> 3.8.2.5
      *
      * @param N    0 or more octets
      * @param salt 128-bit salt
@@ -126,17 +129,18 @@ public class MeshEC {
     }
 
     /**
-     * The network key material derivation function k2 is used to generate instances of EncryptionKey,
+     * <p>The network key material derivation function k2 is used to generate instances of EncryptionKey,
      * PrivacyKey, and NID for use as Master and Private Low Power node communication.
-     * The definition of this key generation function makes use of the MAC function AES-CMAC<sub>T</sub> with a 128-bit key T.
-     * The key T is computed as follows: T = AES-CMAC<sub>salt</sub>(N)
-     * Salt is the 128-bit value computed as follows:
-     * T0 = empty string (zero length)
-     * T1 = AES-CMAC<sub>T</sub>(T0||P||0x01)
-     * T2 = AES-CMAC<sub>T</sub>(T1||P||0x02)
-     * T3 = AES-CMAC<sub>T</sub>(T2||P||0x03)
-     * k2(N, P) = (T1||T2||T3) mod 2<sup>263</sup>
-     *@see .8.2.6 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a>
+     * The definition of this key generation function makes use of the MAC function AES-CMAC<sub>T</sub> with a 128-bit key T.</p>
+     * <p>The key T is computed as follows:</p>
+     * <p><i>T = AES-CMAC<sub>salt</sub>(N)</i></p>
+     * <p>Salt is the 128-bit value computed as follows:</p>
+     * <p><i>T0 = empty string (zero length)<br>
+     * T1 = AES-CMAC<sub>T</sub>(T0 || P || 0x01)<br>
+     * T2 = AES-CMAC<sub>T</sub>(T1 || P || 0x02)<br>
+     * T3 = AES-CMAC<sub>T</sub>(T2 || P || 0x03)<br>
+     * k2(N, P) = (T1 || T2 || T3) mod 2<sup>263</sup></i></p>
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a> 3.8.2.6
      *
      * @param N 128-bit
      * @param P 1 or more octets
@@ -184,12 +188,16 @@ public class MeshEC {
     }
 
     /**
-     * The derivation function k3 is used to generate a public value of 64 bits derived from a private key.
-     * The definition of this derivation function makes use of the MAC function AES-CMAC<sub>T</sub> with a 128-bit key T.
-     * The key (T) is computed as follows: T = AES-CMAC<sub>salt</sub>(N).
-     * Salt is a 128-bit value computed as follows: Salt = s1("smk3")
-     * The output of the derivation function is as follows: s3(N) = AES-CMAC<sub>T</sub>("id64"||0x01) mod 2<sup>64</sup>
-     * @see 3.8.2.7 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=102"</a>
+     * <p>The derivation function k3 is used to generate a public value of 64 bits derived from a private key.
+     * The definition of this derivation function makes use of the MAC function AES-CMAC<sub>T</sub> with a 128-bit key T.</p>
+     * <p>The key (T) is computed as follows:</p>
+     * <p><i>T = AES-CMAC<sub>salt</sub>(N)</i></p>
+     * <p>Salt is a 128-bit value computed as follows:</p>
+     * <p><i>Salt = s1("smk3")</i><p>
+     * <p>The output of the derivation function is as follows:</p>
+     * <p><i>s3(N) = AES-CMAC<sub>T</sub>("id64" || 0x01) mod 2<sup>64</sup></i><p>
+     *
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=102"</a> 3.8.2.7
      *
      * @param N 128-bit private key
      * @return 64-bit public value
@@ -214,12 +222,15 @@ public class MeshEC {
     }
 
     /**
-     * The derivation function k4 is used to generate a public value of 6 bits derived from a private key.
-     * The definition of this derivation function makes use of the MAC function AES-CMAC<sub>T</sub> with a 128-bit key T.
-     * The key (T) is computed as follows: T = AES-CMAC<sub>salt</sub>(N).
-     * Salt is a 128-bit value computed as follows: Salt = s1("smk4").
-     * The output of the derivation function k4 is as follows:
-     * k4(N) = AES-CMAC<sub>T</sub>("id6"||0x01) mod 2<sup>6</sup>
+     * <p>The derivation function k4 is used to generate a public value of 6 bits derived from a private key.
+     * The definition of this derivation function makes use of the MAC function AES-CMAC<sub>T</sub> with a 128-bit key T.</p>
+     * <p>The key (T) is computed as follows:</p>
+     * <p><i>T = AES-CMAC<sub>salt</sub>(N).</i></p>
+     * <p>Salt is a 128-bit value computed as follows:</p>
+     * <p><i>Salt = s1("smk4").</i></p>
+     * <p>The output of the derivation function k4 is as follows:</p>
+     * <p><i>k4(N) = AES-CMAC<sub>T</sub>("id6" || 0x01) mod 2<sup>6</sup></i></p>
+     *
      * @see 3.8.2.8 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=102"</a>
      *
      * @param N 128-bit private key
@@ -238,10 +249,12 @@ public class MeshEC {
     }
 
     /**
-     * AES-CMAC function implementation. Cipher-based Message Authentication Code that uses AES-128
-     * as the block cipher function according RFC4493.
-     * The 128-bit MAC is generated as follows: MAC=AES-CMAC<sub>T</sub>(P)
-     * @see 3.8.2.2 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=100"</a>
+     * <p>AES-CMAC function implementation. Cipher-based Message Authentication Code that uses AES-128
+     * as the block cipher function according RFC4493.</p>
+     * <p>The 128-bit MAC is generated as follows:</p>
+     * <p><i>MAC=AES-CMAC<sub>T</sub>(P)</i></p>
+     *
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=100"</a> 3.8.2.2
      *
      * @param P variable length data to be authenticated
      * @param T 128-bit key
@@ -257,10 +270,12 @@ public class MeshEC {
     }
 
     /**
-     * Function implements encryption and authentication using AES Counter with CBC-MAC (CCM)
-     * (see Volume 6, Part E, section 1 of the Core Specification).
-     * The ciphertext and MAC are generated as follows: ciphertext, mac = AES-CCM<sub>key</sub>(nonce, data)
-     * @see 3.8.2.3 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=100"</a>
+     * <p>Function implements encryption and authentication using AES Counter with CBC-MAC (CCM)
+     * (see Volume 6, Part E, section 1 of the Core Specification).</p>
+     * <p>The <b>ciphertext</b> and <b>MAC</b> are generated as follows:</p>
+     * <p><i>ciphertext, mac = AES-CCM<sub>key</sub>(nonce, data)</i></p>
+     *
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=100"</a> 3.8.2.3
      *
      * @param key     128-bit key
      * @param nonce   104-bit nonce
@@ -286,7 +301,7 @@ public class MeshEC {
     }
 
     /**
-     * Function implements decryption of ciphertext previously encrypted using @AES-CCM #AES_CMAC(byte[] P, byte[] T).
+     * Function implements decryption of ciphertext previously encrypted using {@link #AES_CCM AES-CCM}.
      *
      * @param key     128-bit key
      * @param nonce   104-bit nonce
@@ -305,9 +320,10 @@ public class MeshEC {
     }
 
     /**
-     * Encryption function, same as defined in Volume 3, Part H, Section 2.2.1 of thr Core Specification.
-     * ciphertext = e(key, plaintext).
-     * @see 3.8.2.1 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=99"</a>
+     * <p>Encryption function, same as defined in Volume 3, Part H, Section 2.2.1 of thr Core Specification.</p>
+     * <p><i>ciphertext = e(key, plaintext).</i></p>
+     *
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=99"</a> 3.8.2.1
      *
      * @param key  128-bit key
      * @param data 128-bit data
@@ -322,8 +338,8 @@ public class MeshEC {
     }
 
     /**
-     * Calculates ECDH secret from device private key and peer public key.
-     * ECDHSecret = P-256(private key, peer public key)
+     * <p>Calculates ECDH secret from device private key and peer public key.</p>
+     * <p><i>ECDHSecret = P-256(private key, peer public key)</i></p>
      *
      * @param pair     key pair containing device private key
      * @param peerPKey the peer public key
@@ -344,11 +360,12 @@ public class MeshEC {
     }
 
     /**
-     * Generate device key in process of provisioning device from shared secret an provision salt using
-     * key derivation function @see #k1(byte[] N, byte[] salt, byte[] P)).
-     * The DevKey shall be derived from the ECDHSecret and ProvisioningSalt as described by the formula below:
-     * DevKey = k1(ECDHSecret, ProvisioningSalt, “prdk”)
-     * @see 3.8.6.1 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=108"</a>
+     * <p>Generate device key in process of provisioning device from shared secret an provision salt using
+     * key derivation function {@link #k1 k1}.</p>
+     * <p>The DevKey shall be derived from the ECDHSecret and ProvisioningSalt as described by the formula below:</p>
+     * <p><i><DevKey = k1(ECDHSecret, ProvisioningSalt, “prdk”)</i></p>
+     *
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=108"</a> 3.8.6.1
      *
      * @param secret        the shared secret value
      * @param provisionSalt the provision salt
