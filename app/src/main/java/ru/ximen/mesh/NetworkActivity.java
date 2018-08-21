@@ -34,7 +34,7 @@ public class NetworkActivity extends BasicServiceActivty {
     @Override
     protected void onServiceAttached(MeshStackService service) {
         super.onServiceAttached(service);
-        mNetwork = mStackService.getNetworkManager().selectNetowrk(getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
+        mNetwork = mStackService.getNetworkManager().selectNetwork(getIntent().getStringExtra("ru.ximen.mesh.NETWORK"));
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override

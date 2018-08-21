@@ -15,22 +15,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by ximen on 20.05.18.
+ * <p>MeshManager class allows to connect to multiple mesh networks on the same device. It manages storing
+ * networks in local storage, loading disired network and saving changes.</p>
+ * <p>Networks being stored in JSON files</p>
+ *
+ * @author Sergey Novgorodov on 20.05.18.
  */
-
 public final class MeshManager {
     private MeshStackService mContext;
     private File mDirectory;
     private MeshNetwork currentNetwork;
     final static private String TAG = MeshManager.class.getSimpleName();
 
-    public MeshManager(MeshStackService mContext, File directory) {
-        this.mContext = mContext;
+    /**
+     * <p>Creates new mesh manager with storage folder <b>directory</b> which used to load and save
+     * networks files.</p>
+     *
+     * @param context  {@link MeshStackService} context
+     * @param directory directory for storing networks
+     */
+    public MeshManager(MeshStackService context, File directory) {
+        this.mContext = context;
         mDirectory = directory;
     }
 
     /**
-     * Returns list of networks saved on device
+     * Returns list of networks names saved on device. That name can be used to load or delete saved
+     * network.
+     *
+     * @return the List of networks names found in storage folder
      */
     public List<String> listNetworks() {
         File[] files = mDirectory.listFiles();
@@ -45,7 +58,7 @@ public final class MeshManager {
      * Creates new empty network and saves it to the disk
      *
      * @param name Name of network being created
-     * @return MeshNetwork object for newly created network
+     * @return {@link MeshNetwork} object for newly created network
      */
     public MeshNetwork createNetwork(String name) {
         Log.d(TAG, "Creating new network: " + name);
@@ -73,7 +86,7 @@ public final class MeshManager {
     /**
      * Deletes existing network name from disk
      *
-     * @param name Name of network to delete
+     * @param name Name of the network to delete
      */
     public void deleteNetwork(String name) {
         File file = new File(mDirectory, name);
@@ -132,7 +145,13 @@ public final class MeshManager {
         return json;
     }
 
-    public MeshNetwork selectNetowrk(String name) {
+    /**
+     * Selects and loads current network.
+     *
+     * @param name The name of saved network to be selected
+     * @return the {@link MeshNetwork} object representing selected network
+     */
+    public MeshNetwork selectNetwork(String name) {
         currentNetwork = getNetwork(name);
         try {
             mContext.getAppManager().fromJSON(load(name).getJSONArray("applications"));
@@ -142,6 +161,11 @@ public final class MeshManager {
         return currentNetwork;
     }
 
+    /**
+     * Return network object currently being used.
+     *
+     * @return {@link MeshNetwork} object for current network
+     */
     public MeshNetwork getCurrentNetwork() {
         return currentNetwork;
     }

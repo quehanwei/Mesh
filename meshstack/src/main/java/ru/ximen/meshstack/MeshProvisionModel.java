@@ -19,15 +19,27 @@ import java.util.List;
 import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
 
 /**
- * Created by ximen on 18.03.18.
+ * <p>Implements provision protocol of Bluetooth Mesh specification</p>
+ * Provisioning is a process of adding an unprovisioned device to a mesh network, managed by a
+ * Provisioner. A Provisioner provides the unprovisioned device with provisioning data that allows it to
+ * become a mesh node. The provisioning data includes a network key, the current IV Index, and the unicast
+ * address for each element.
+ * <p>After the provisioning bearer is established, the Provisioner establishes a shared secret with the device
+ * using an Elliptic Curve Diffie-Hellman (ECDH) protocol. It then authenticates the device using OOB
+ * information that is specific to that device. Such OOB information may include a public key of the device, a
+ * long secret, the requirement to input a value into the device, or the requirement to output a value on that
+ * device. Such OOB information also enables the authentication of that device. Once the device has been
+ * authenticated, the provisioning data is transmitted to the device encrypted with a key derived from that
+ * shared secret. The device key is derived from the ECDHSecret and ProvisioningSalt.</p>
+ * <p>To start provision new device simply call {@link #startProvision(BluetoothDevice, MeshProvisionGetOOBCallback, MeshProvisionFinishedOOBCallback)}.</p>
+ *
+ * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=227">Chapter 5</a>
+ * @author Sergey Novgorodov on 18.03.18.
  */
 
 public class MeshProvisionModel {
-    private final MeshStackService mContext;
-    private final MeshProxyModel mProxy;
-
     final static private String TAG = MeshProvisionModel.class.getSimpleName();
-
+    private final MeshProxyModel mProxy;
     private byte mAlgorithm;
     private byte mPKeyType;
     private byte mStaticOOBType;
@@ -46,13 +58,11 @@ public class MeshProvisionModel {
     private BluetoothDevice mDevice;
 
     private KeyPair pair;
-    private PublicKey peerPKey;
     private byte[] secret;
     private byte[] mConfirmationSalt;
     private byte[] provisionSalt;
     private byte[] mRandomBytes;
     private byte[] mConfirmationKey;
-    private byte[] mConfirmation = new byte[16];
     private byte[] mAuthValue = new byte[16];
 
     public interface MeshProvisionFinishedOOBCallback {
@@ -69,11 +79,11 @@ public class MeshProvisionModel {
 
     MeshProvisionModel(MeshStackService context) {
         mNetwork = context.getNetworkManager().getCurrentNetwork();
-        mContext = context;
-        mProxy = mContext.getProxy();
+        //mContext = context;
+        mProxy = context.getProxy();
         pair = MeshEC.generatePair();
         confirmationInputs = new ArrayList<>();
-        mContext.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROVISION_DATA_OUT, characteristicCallback);
+        context.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROVISION_DATA_OUT, characteristicCallback);
     }
 
     private MeshBluetoothService.MeshCharacteristicChangedCallback characteristicCallback = new MeshBluetoothService.MeshCharacteristicChangedCallback(){
@@ -95,7 +105,7 @@ public class MeshProvisionModel {
                 Log.d(TAG, "Got Public key:");
                 Log.d(TAG, "X: " + Utils.toHexString(pdu.getPKeyX()));
                 Log.d(TAG, "Y: " + Utils.toHexString(pdu.getPKeyY()));
-                peerPKey = MeshEC.getPeerPKey(pdu.getPKeyX(), pdu.getPKeyY());
+                PublicKey peerPKey = MeshEC.getPeerPKey(pdu.getPKeyX(), pdu.getPKeyY());
                 addInput(pdu.provisionData());
                 secret = MeshEC.calculateSecret(pair, peerPKey);
                 confirmation();
@@ -157,6 +167,14 @@ public class MeshProvisionModel {
         mProxy.send(pdu);
     }
 
+    /**<p>Starts provision process.</p>
+     * <p>{@link MeshProvisionGetOOBCallback} is used to request OOB auth code from user<br>
+     * {@link MeshProvisionFinishedOOBCallback} is called when provision completes</p>
+     *
+     * @param device    BluetoothDevice to provision
+     * @param getOOB    callback for OOB auth code request
+     * @param finished  callback called when provision finished
+     */
     public void startProvision(BluetoothDevice device, MeshProvisionGetOOBCallback getOOB, MeshProvisionFinishedOOBCallback finished) {
         mDevice = device;
         mFinishedCallback = finished;
@@ -316,7 +334,7 @@ public class MeshProvisionModel {
         mAuthValue = authValue;
         mConfirmationSalt = MeshEC.s1(inputs);
         //Log.d(TAG, "Confirmation salt: " + Utils.toHexString(mConfirmationSalt));
-        byte[] mConfirmationKey = MeshEC.k1(secret, mConfirmationSalt, "prck".getBytes());
+        mConfirmationKey = MeshEC.k1(secret, mConfirmationSalt, "prck".getBytes());
         //Log.d(TAG, "Confirmation key: " + Utils.toHexString(mConfirmationSalt));
         SecureRandom random = new SecureRandom();
         mRandomBytes = new byte[16]; // 128 bits are converted to 16 bytes;
@@ -325,11 +343,7 @@ public class MeshProvisionModel {
         byte[] randomAuth = new byte[32];
         System.arraycopy(mRandomBytes, 0, randomAuth, 0, 16);
         System.arraycopy(authValue, 0, randomAuth, 16, 16);
-        //Log.d(TAG, "Random||AuthValue: " + Utils.toHexString(randomAuth));
-
-        mConfirmation = MeshEC.AES_CMAC(randomAuth, mConfirmationKey);
-        //Log.d(TAG, "Confirmation: " + Utils.toHexString(mConfirmation));
-        return mConfirmation;
+        return MeshEC.AES_CMAC(randomAuth, mConfirmationKey);
     }
 
     private byte[] remoteConfirmation(byte[] randomBytes) {

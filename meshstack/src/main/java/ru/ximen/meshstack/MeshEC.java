@@ -100,7 +100,7 @@ public class MeshEC {
      * <p>Salt generation function. The output of the salt generation function s1 is as follows:</p>
      * <p><i>s1(input) = AES-CMAC<sub>ZERO</sub>(input)</i></p>
      * <p>where ZERO is 128-bit value of 0x0000 0000 0000 0000 0000 0000 0000 0000</p>
-     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a> 3.8.2.4
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101">3.8.2.4</a>
      *
      * @param input non-zero length octet array
      * @return salt value
@@ -116,7 +116,7 @@ public class MeshEC {
      * <p><i>T = AES-CMAC<sub>salt</sub>(N).</i></p>
      * <p>The output of the key generation function k1 is as follows:</p>
      * <p><i>k1(N, salt, P) = AES-CMAC<sub>T</sub>(P).</i></p>
-     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a> 3.8.2.5
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101">3.8.2.5</a>
      *
      * @param N    0 or more octets
      * @param salt 128-bit salt
@@ -140,7 +140,7 @@ public class MeshEC {
      * T2 = AES-CMAC<sub>T</sub>(T1 || P || 0x02)<br>
      * T3 = AES-CMAC<sub>T</sub>(T2 || P || 0x03)<br>
      * k2(N, P) = (T1 || T2 || T3) mod 2<sup>263</sup></i></p>
-     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101"</a> 3.8.2.6
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=101">3.8.2.6</a>
      *
      * @param N 128-bit
      * @param P 1 or more octets
@@ -197,7 +197,7 @@ public class MeshEC {
      * <p>The output of the derivation function is as follows:</p>
      * <p><i>s3(N) = AES-CMAC<sub>T</sub>("id64" || 0x01) mod 2<sup>64</sup></i><p>
      *
-     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=102"</a> 3.8.2.7
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=102">3.8.2.7</a>
      *
      * @param N 128-bit private key
      * @return 64-bit public value
@@ -231,7 +231,7 @@ public class MeshEC {
      * <p>The output of the derivation function k4 is as follows:</p>
      * <p><i>k4(N) = AES-CMAC<sub>T</sub>("id6" || 0x01) mod 2<sup>6</sup></i></p>
      *
-     * @see 3.8.2.8 <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=102"</a>
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=102">3.8.2.8</a>
      *
      * @param N 128-bit private key
      * @return 6 bits public value
@@ -254,7 +254,7 @@ public class MeshEC {
      * <p>The 128-bit MAC is generated as follows:</p>
      * <p><i>MAC=AES-CMAC<sub>T</sub>(P)</i></p>
      *
-     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=100"</a> 3.8.2.2
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=100">3.8.2.2</a>
      *
      * @param P variable length data to be authenticated
      * @param T 128-bit key
@@ -275,7 +275,7 @@ public class MeshEC {
      * <p>The <b>ciphertext</b> and <b>MAC</b> are generated as follows:</p>
      * <p><i>ciphertext, mac = AES-CCM<sub>key</sub>(nonce, data)</i></p>
      *
-     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=100"</a> 3.8.2.3
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=100">3.8.2.3</a>
      *
      * @param key     128-bit key
      * @param nonce   104-bit nonce
@@ -323,7 +323,7 @@ public class MeshEC {
      * <p>Encryption function, same as defined in Volume 3, Part H, Section 2.2.1 of thr Core Specification.</p>
      * <p><i>ciphertext = e(key, plaintext).</i></p>
      *
-     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=99"</a> 3.8.2.1
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=99">3.8.2.1</a>
      *
      * @param key  128-bit key
      * @param data 128-bit data
@@ -365,7 +365,7 @@ public class MeshEC {
      * <p>The DevKey shall be derived from the ECDHSecret and ProvisioningSalt as described by the formula below:</p>
      * <p><i><DevKey = k1(ECDHSecret, ProvisioningSalt, “prdk”)</i></p>
      *
-     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=108"</a> 3.8.6.1
+     * @see <a href="https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633#page=108">3.8.6.1</a>
      *
      * @param secret        the shared secret value
      * @param provisionSalt the provision salt
