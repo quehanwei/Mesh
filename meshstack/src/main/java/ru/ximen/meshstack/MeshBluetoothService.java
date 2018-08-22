@@ -50,8 +50,10 @@ public class MeshBluetoothService extends Service {
      * Default timeout for scanning neighbour bluetooth devices.
      */
     final static public int DEFAULT_SCAN_TIMEOUT = 10000;
+    final static private int DEFAULT_RETRY_COUNT = 3;
     private int mConnectionState = STATE_DISCONNECTED;      // Initial connection state
     private final IBinder mBinder = new LocalBinder();      // Service binder for methods access
+    private int retryCount;
 
     /**
      * UUID for provision DATA_IN characteristic.
@@ -90,6 +92,10 @@ public class MeshBluetoothService extends Service {
      * Intent action for disconnection notification
      */
     public final static String ACTION_GATT_DISCONNECTED = "ru.ximen.meshstack.le.ACTION_GATT_DISCONNECTED";  // Intent for disconnected event
+    /**
+     * Intent action for reconnecting GATT notification
+     */
+    public final static String ACTION_GATT_RECONNECTING = "ru.ximen.meshstack.le.ACTION_GATT_RECONNECTING";     // Intent for connected event
     final static private String TAG = MeshBluetoothService.class.getSimpleName();
 
     private BluetoothGattCharacteristic mProvisionCharacteristic;
@@ -139,22 +145,29 @@ public class MeshBluetoothService extends Service {
             new BluetoothGattCallback() {
                 @Override
                 public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                    String intentAction;
+                    String intentAction = "";
                     if (status == GATT_SUCCESS) {
+                        retryCount = 0;
                         if (newState == STATE_CONNECTED) {
                             intentAction = ACTION_GATT_CONNECTED;
                             mConnectionState = STATE_CONNECTED;
-                            broadcastUpdate(intentAction);
                             Log.i(TAG, "Connected to GATT server.");
                             mBluetoothGatt.discoverServices();
-                        } else if (newState == STATE_DISCONNECTED) {
+                        } else {
                             intentAction = ACTION_GATT_DISCONNECTED;
                             mConnectionState = STATE_DISCONNECTED;
-                            broadcastUpdate(intentAction);
                             gatt.close();
                             Log.i(TAG, "Disconnected from GATT server.");
                         }
-                    } else gatt.close();
+                        broadcastUpdate(intentAction);
+                    } else {
+                        Log.e(TAG, "GATT not SUCCESS. Retrying connect");
+                        if(--retryCount > 0){
+                            gatt.connect();
+                            intentAction = ACTION_GATT_RECONNECTING;
+                            broadcastUpdate(intentAction);
+                        } else gatt.close();
+                    }
                 }
 
                 @Override
@@ -246,6 +259,7 @@ public class MeshBluetoothService extends Service {
      */
     public void connect(BluetoothDevice device) {
         Log.d(TAG, "Connecting device " + device.toString());
+        if(retryCount == 0) retryCount = DEFAULT_RETRY_COUNT;
         mBluetoothGatt = device.connectGatt(getApplicationContext(), false, mGattCallback);
     }
 
@@ -257,7 +271,7 @@ public class MeshBluetoothService extends Service {
     public void connect(MeshDevice device) {
         Log.d(TAG, "Connecting device " + device.getName());
         BluetoothDevice bDevice = ((BluetoothManager) getApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getRemoteDevice(device.getMAC());
-        mBluetoothGatt = bDevice.connectGatt(getApplicationContext(), false, mGattCallback);
+        connect(bDevice);
     }
 
     /**

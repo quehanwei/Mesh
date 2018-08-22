@@ -172,7 +172,7 @@ public class ScanActivity extends BasicServiceActivty {
                                                         new DialogInterface.OnClickListener() {
 
                                                             public void onClick(DialogInterface dialog, int which) {
-                                                                // TODO Auto-generated method stub
+                                                                mStackService.getMeshBluetoothService().disconnect();
                                                                 return;
                                                             }
                                                         });
@@ -192,12 +192,14 @@ public class ScanActivity extends BasicServiceActivty {
                         new DialogInterface.OnClickListener() {
 
                             public void onClick(DialogInterface dialog, int which) {
-                                // TODO Auto-generated method stub
+                                mStackService.getMeshBluetoothService().disconnect();
                                 return;
                             }
                         });
                 alertName.show();
 
+            } else if (MeshBluetoothService.ACTION_GATT_CONNECTED.equals(action)) {
+                Toast.makeText(context, "Reconnecting...", Toast.LENGTH_LONG);
             }
         }
     };
@@ -206,6 +208,7 @@ public class ScanActivity extends BasicServiceActivty {
     protected void onResume() {
         super.onResume();
         IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_GATT_CONNECTED);
+        filter.addAction(MeshBluetoothService.ACTION_GATT_RECONNECTING);
         mBroadcastManager.registerReceiver(broadcastReceiver, filter);
     }
 

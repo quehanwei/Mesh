@@ -41,6 +41,7 @@ public class MeshStackService extends Service {
          * @return the service instance object
          */
         public MeshStackService getService() {
+
             return MeshStackService.this;
         }
     }
@@ -144,4 +145,11 @@ public class MeshStackService extends Service {
             }
         }
     };
+
+    @Override
+    public void onDestroy() {
+        mBluetoothService.disconnect();
+        mBluetoothService.unbindService(mConnection);
+        super.onDestroy();
+    }
 }
