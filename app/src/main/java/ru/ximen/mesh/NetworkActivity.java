@@ -19,6 +19,7 @@ public class NetworkActivity extends BasicServiceActivty {
     private final String TAG = "NetworkActivity";
     private DeviceListAdapter mLstAdapter;
     private MeshNetwork mNetwork;
+    boolean isBound = false;
 
     // TODO: Connect to selected network through best RSSI proxy
 
@@ -66,23 +67,26 @@ public class NetworkActivity extends BasicServiceActivty {
             }
 
         });
+        isBound = true;
 
         // TODO: Menu to delete network
     }
 
     @Override
     protected void onResume() {
-        mLstAdapter.notifyDataSetChanged();
+        if(isBound) {
+            mLstAdapter.notifyDataSetChanged();
+        }
         super.onResume();
     }
 
     @Override
     protected void onStart() {
-        if (!mStackService.getMeshBluetoothService().isConnected()) {
+        /*if (!mStackService.getMeshBluetoothService().isConnected()) {
             Toast.makeText(this, "Connecting to network " + mNetwork.getName(), Toast.LENGTH_SHORT).show();
             if (mNetwork.getDevices().size() > 0)
                 mStackService.getMeshBluetoothService().connect(findProxy());
-        }
+        }*/
         super.onStart();
     }
 
