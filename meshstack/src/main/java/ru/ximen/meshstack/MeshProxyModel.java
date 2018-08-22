@@ -1,15 +1,9 @@
 package ru.ximen.meshstack;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by ximen on 17.03.18.
@@ -142,5 +136,7 @@ public class MeshProxyModel {
         for (int i = 0; i < data.size(); i++) result[i] = data.get(i);
         return result;
     }
+
+
 }
 
