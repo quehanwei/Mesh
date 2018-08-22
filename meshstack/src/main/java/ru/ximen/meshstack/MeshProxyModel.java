@@ -11,8 +11,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
-
 /**
  * Created by ximen on 17.03.18.
  */

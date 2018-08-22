@@ -16,14 +16,12 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
-
 /**
- * <p>Implements provision protocol of Bluetooth Mesh specification</p>
- * Provisioning is a process of adding an unprovisioned device to a mesh network, managed by a
+ * <p>Implements provision protocol of Bluetooth Mesh specification.</p>
+ * <p>Provisioning is a process of adding an unprovisioned device to a mesh network, managed by a
  * Provisioner. A Provisioner provides the unprovisioned device with provisioning data that allows it to
  * become a mesh node. The provisioning data includes a network key, the current IV Index, and the unicast
- * address for each element.
+ * address for each element.</p>
  * <p>After the provisioning bearer is established, the Provisioner establishes a shared secret with the device
  * using an Elliptic Curve Diffie-Hellman (ECDH) protocol. It then authenticates the device using OOB
  * information that is specific to that device. Such OOB information may include a public key of the device, a
@@ -77,6 +75,11 @@ public class MeshProvisionModel {
         void gotOOB(String oob);
     }
 
+    /**
+     * Constructor for MeshProvisionModel object. Initialize object with data from <b>context</b>
+     *
+     * @param context {@link MeshStackService} context object
+     */
     MeshProvisionModel(MeshStackService context) {
         mNetwork = context.getNetworkManager().getCurrentNetwork();
         //mContext = context;

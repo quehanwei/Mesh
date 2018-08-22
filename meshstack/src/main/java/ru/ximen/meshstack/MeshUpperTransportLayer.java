@@ -1,20 +1,11 @@
 package ru.ximen.meshstack;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import org.spongycastle.crypto.InvalidCipherTextException;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_ADDR;
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 
 public class MeshUpperTransportLayer {
     final static private String TAG = MeshUpperTransportLayer.class.getSimpleName();
@@ -24,7 +15,6 @@ public class MeshUpperTransportLayer {
     public MeshUpperTransportLayer(MeshStackService context) {
         mContext = context;
         callbackHashMap = new HashMap<>();
-        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_UPPER_TRANSPORT_DATA_AVAILABLE);
     }
 
     private byte[] getOpcode(byte[] data) {

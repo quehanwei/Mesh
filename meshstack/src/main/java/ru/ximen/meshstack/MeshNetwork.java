@@ -15,12 +15,7 @@ import org.json.JSONObject;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_ADDR;
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 
 /**
  * Created by ximen on 12.05.18.
@@ -74,11 +69,6 @@ public class MeshNetwork {
         mNID = (byte) (t[0] & 0x7F);
         System.arraycopy(t, 1, mEncryptionKey, 0, 16);
         System.arraycopy(t, 17, mPrivacyKey, 0, 16);
-        //Log.d(TAG, "Encryption key: " + Utils.toHexString(mEncryptionKey));
-        //Log.d(TAG, "Privacy key: " + Utils.toHexString(mPrivacyKey));
-
-        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_NETWORK_DATA_AVAILABLE);
-        filter.addAction(MeshBluetoothService.ACTION_MESH_BEACON_DATA_AVAILABLE);
     }
 
     public void newPDU(MeshNetworkPDU pdu){
