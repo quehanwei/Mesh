@@ -1,18 +1,9 @@
 package ru.ximen.meshstack;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_ADDR;
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_DATA;
-import static ru.ximen.meshstack.MeshBluetoothService.EXTRA_SEQ;
 
 public class MeshTransportLayer {
     final static private String TAG = MeshTransportLayer.class.getSimpleName();
@@ -24,7 +15,6 @@ public class MeshTransportLayer {
     public MeshTransportLayer(MeshStackService context) {
         mContext = context;
         receiveQueue = new HashMap<>();
-        IntentFilter filter = new IntentFilter(MeshBluetoothService.ACTION_TRANSPORT_DATA_AVAILABLE);
     }
 
     private void processQueued(short addr, byte SegN) {
