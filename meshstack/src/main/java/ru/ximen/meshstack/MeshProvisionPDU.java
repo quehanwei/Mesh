@@ -21,7 +21,7 @@ public class MeshProvisionPDU extends MeshPDU {
     final static public byte DATA = 0x07;
     final static public byte COMPLETE = 0x08;
     final static public byte FAILED = 0x09;
-    final static private String TAG = "MeshProvisionPDU";
+    final static private String TAG = MeshProvisionPDU.class.getSimpleName();
     private byte mType;
 
     public MeshProvisionPDU(byte type) {
@@ -54,7 +54,7 @@ public class MeshProvisionPDU extends MeshPDU {
     }
 
     public MeshProvisionPDU(byte[] data) {
-        Log.d(TAG, "Reconstructing PDU from data [" + Utils.toHexString(data, " ") + "]");
+        Log.v(TAG, "Reconstructing PDU from data [" + Utils.toHexString(data, " ") + "]");
         mData = data;
         mType = mData[0];
     }

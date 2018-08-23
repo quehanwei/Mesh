@@ -148,43 +148,13 @@ public class ScanActivity extends BasicServiceActivty {
 
                         Log.i(TAG, "Starting provision");
                         mStackService.getNetworkManager().getCurrentNetwork().provisionDevice(mStackService.getMeshBluetoothService().getConnectedDevice(),
-                                        name,
-                                        new MeshProvisionModel.MeshProvisionGetOOBCallback() {
-                                            @Override
-                                            public void getOOB(final MeshProvisionModel.MeshProvisionOOBCallback oobCallback) {
-                                                AlertDialog.Builder alert = new AlertDialog.Builder(ScanActivity.this);
-                                                alert.setTitle("Enter Public Key");
-                                                alert.setMessage("OOB Key:");
-
-                                                // Set an EditText view to get user input
-                                                final EditText input = new EditText(ScanActivity.this);
-                                                alert.setView(input);
-
-                                                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                                                    public void onClick(DialogInterface dialog, int whichButton) {
-                                                        String value = input.getText().toString();
-                                                        oobCallback.gotOOB(value);
-                                                        return;
-                                                    }
-                                                });
-
-                                                alert.setNegativeButton("Cancel",
-                                                        new DialogInterface.OnClickListener() {
-
-                                                            public void onClick(DialogInterface dialog, int which) {
-                                                                mStackService.getMeshBluetoothService().disconnect();
-                                                                return;
-                                                            }
-                                                        });
-                                                alert.show();
-                                            }
-                                        }, new MeshProvisionModel.MeshProvisionFinishedOOBCallback() {
+                                        name, oobCallback,
+                                            new MeshProvisionModel.MeshProvisionFinishedOOBCallback() {
                                             @Override
                                             public void finished(MeshDevice device, MeshNetwork network) {
                                                 finish();
                                             }
                                         });
-                        return;
                     }
                 });
 
@@ -193,14 +163,49 @@ public class ScanActivity extends BasicServiceActivty {
 
                             public void onClick(DialogInterface dialog, int which) {
                                 mStackService.getMeshBluetoothService().disconnect();
-                                return;
                             }
                         });
                 alertName.show();
 
-            } else if (MeshBluetoothService.ACTION_GATT_CONNECTED.equals(action)) {
+            } else if (MeshBluetoothService.ACTION_GATT_RECONNECTING.equals(action)) {
                 Toast.makeText(context, "Reconnecting...", Toast.LENGTH_LONG);
             }
+        }
+    };
+
+    MeshProvisionModel.MeshProvisionGetOOBCallback oobCallback = new MeshProvisionModel.MeshProvisionGetOOBCallback() {
+        @Override
+        public void getOOB(final MeshProvisionModel.MeshProvisionOOBCallback callback) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    AlertDialog.Builder alert = new AlertDialog.Builder(ScanActivity.this);
+                    alert.setTitle("Enter Public Key");
+                    alert.setMessage("OOB Key:");
+
+                    // Set an EditText view to get user input
+                    final EditText input = new EditText(ScanActivity.this);
+                    alert.setView(input);
+
+                    alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            String value = input.getText().toString();
+                            callback.gotOOB(value);
+                            return;
+                        }
+                    });
+
+                    alert.setNegativeButton("Cancel",
+                            new DialogInterface.OnClickListener() {
+
+                                public void onClick(DialogInterface dialog, int which) {
+                                    mStackService.getMeshBluetoothService().disconnect();
+                                    return;
+                                }
+                            });
+                    alert.show();
+                }
+            });
         }
     };
 

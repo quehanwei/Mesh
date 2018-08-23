@@ -1,6 +1,7 @@
 package ru.ximen.meshstack;
 
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -21,6 +22,7 @@ import android.os.ParcelUuid;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -161,11 +163,11 @@ public class MeshBluetoothService extends Service {
                         }
                         broadcastUpdate(intentAction);
                     } else {
-                        Log.e(TAG, "GATT not SUCCESS. Retrying connect");
                         if(--retryCount > 0){
-                            gatt.connect();
+                            Log.e(TAG, "GATT not SUCCESS. Retrying connect");
                             intentAction = ACTION_GATT_RECONNECTING;
                             broadcastUpdate(intentAction);
+                            gatt.connect();
                         } else gatt.close();
                     }
                 }
@@ -181,7 +183,7 @@ public class MeshBluetoothService extends Service {
                     super.onServicesDiscovered(gatt, status);
                     List<BluetoothGattService> services = gatt.getServices();
                     for (BluetoothGattService service : services) {
-                        //Log.d(TAG, service.getUuid().toString());
+                        Log.d(TAG, service.getUuid().toString());
                     }
                     BluetoothGattService srvProxy = gatt.getService(MESH_PROXY_SERVICE);
                     BluetoothGattService srvProvision = gatt.getService(MESH_PROVISION_SERVICE);
@@ -234,7 +236,7 @@ public class MeshBluetoothService extends Service {
     void writeProvision(byte[] data) {
         mProvisionCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         mProvisionCharacteristic.setValue(data);
-        writeCharacteristic(mProvisionCharacteristic);
+        mBluetoothGatt.writeCharacteristic(mProvisionCharacteristic);
     }
 
     /**
@@ -245,11 +247,7 @@ public class MeshBluetoothService extends Service {
     void writeProxy(byte[] data) {
         mProxyCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         mProxyCharacteristic.setValue(data);
-        writeCharacteristic(mProxyCharacteristic);
-    }
-
-    private void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
-        mBluetoothGatt.writeCharacteristic(characteristic);
+        mBluetoothGatt.writeCharacteristic(mProxyCharacteristic);
     }
 
     /**
@@ -303,6 +301,17 @@ public class MeshBluetoothService extends Service {
         scanFilters.add(scanFilter);
         ScanSettings scanSettings = new ScanSettings.Builder().build();
         bluetoothScanner.startScan(scanFilters, scanSettings, scanCallback);
+    }
+
+    /**
+     * Stops scanning bluetooth devices.
+     * Requires BLUETOOTH_ADMIN permissions.
+     *
+     * @param scanCallback Callback function
+     */
+    public void stopScan(ScanCallback scanCallback){
+        BluetoothLeScanner bluetoothScanner = ((BluetoothManager) getApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getBluetoothLeScanner();
+        bluetoothScanner.stopScan(scanCallback);
     }
 
     /**

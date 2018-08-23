@@ -1,5 +1,6 @@
 package ru.ximen.mesh;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -16,6 +17,7 @@ import ru.ximen.meshstack.MeshStackService;
 
 
 public class NetworkActivity extends BasicServiceActivty {
+    private static final int REQUEST_ENABLE_BT = 1;
     private final String TAG = "NetworkActivity";
     private DeviceListAdapter mLstAdapter;
     private MeshNetwork mNetwork;
@@ -30,6 +32,13 @@ public class NetworkActivity extends BasicServiceActivty {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         startService(new Intent(this, MeshStackService.class));
+
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if(!mBluetoothAdapter.isEnabled()){
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }
+
     }
 
     @Override
@@ -70,6 +79,13 @@ public class NetworkActivity extends BasicServiceActivty {
         isBound = true;
 
         // TODO: Menu to delete network
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == REQUEST_ENABLE_BT){
+            if (resultCode != RESULT_OK) finish();
+        }
     }
 
     @Override
