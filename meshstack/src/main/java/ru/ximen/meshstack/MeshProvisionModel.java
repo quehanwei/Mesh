@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.speech.tts.UtteranceProgressListener;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.util.Pair;
@@ -14,6 +15,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -86,54 +88,49 @@ public class MeshProvisionModel {
         mProxy = context.getProxy();
         pair = MeshEC.generatePair();
         confirmationInputs = new ArrayList<>();
-        context.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROVISION_DATA_OUT, characteristicCallback);
+        //context.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROVISION_DATA_OUT, characteristicCallback);
     }
 
-    private MeshBluetoothService.MeshCharacteristicChangedCallback characteristicCallback = new MeshBluetoothService.MeshCharacteristicChangedCallback(){
-        @Override
-        public void onCharacteristicChanged(byte[] data) {
-            MeshProvisionPDU pdu = new MeshProvisionPDU(data);
-            if (pdu.getType() == MeshProvisionPDU.CAPABILITIES) {
-                Log.d(TAG, "Got capabilities");
-                mAlgorithm = pdu.getAlgorithms();
-                mPKeyType = pdu.getPKeyType();
-                mStaticOOBType = pdu.getStaticOOBType();
-                mOutputOOBSize = pdu.getOutputOOBSize();
-                mOutputOOBAction = pdu.getOutputOOBAction();
-                mInputOOBSize = pdu.getInputOOBSize();
-                mInputOOBAction = pdu.getInputOOBAction();
-                addInput(pdu.provisionData());
-                checkCapabilities();
-            } else if (pdu.getType() == MeshProvisionPDU.PKEY) {
-                Log.d(TAG, "Got Public key:");
-                Log.d(TAG, "X: " + Utils.toHexString(pdu.getPKeyX()));
-                Log.d(TAG, "Y: " + Utils.toHexString(pdu.getPKeyY()));
-                PublicKey peerPKey = MeshEC.getPeerPKey(pdu.getPKeyX(), pdu.getPKeyY());
-                addInput(pdu.provisionData());
-                secret = MeshEC.calculateSecret(pair, peerPKey);
-                confirmation();
-            } else if (pdu.getType() == MeshProvisionPDU.CONFIRMATION) {
-                Log.d(TAG, "Got Confirmation");
-                peerConfirmation = pdu.getConfirmation();
-                sendRandom();
-            } else if (pdu.getType() == MeshProvisionPDU.RANDOM) {
-                Log.d(TAG, "Got Random");
-                peerRandom = pdu.getRandom();
-                if (peerConfirmation != remoteConfirmation(peerRandom)) {
-                    Log.e(TAG, "Confirmation doesn't match!");
-                }
-                sendData();
-            } else if (pdu.getType() == MeshProvisionPDU.COMPLETE) {
-                Log.d(TAG, "Got Provision complete");
-
-                provisionComplete();
-            } else if (pdu.getType() == MeshProvisionPDU.FAILED) {
-                Log.e(TAG, "Got error PDU. Reason: " + pdu.errorString());
+    void newPDU(MeshProvisionPDU pdu){
+        if (pdu.getType() == MeshProvisionPDU.CAPABILITIES) {
+            Log.d(TAG, "Got capabilities");
+            mAlgorithm = pdu.getAlgorithms();
+            mPKeyType = pdu.getPKeyType();
+            mStaticOOBType = pdu.getStaticOOBType();
+            mOutputOOBSize = pdu.getOutputOOBSize();
+            mOutputOOBAction = pdu.getOutputOOBAction();
+            mInputOOBSize = pdu.getInputOOBSize();
+            mInputOOBAction = pdu.getInputOOBAction();
+            addInput(pdu.provisionData());
+            checkCapabilities();
+        } else if (pdu.getType() == MeshProvisionPDU.PKEY) {
+            Log.d(TAG, "Got Public key");
+            //Log.d(TAG, "X: " + Utils.toHexString(pdu.getPKeyX()));
+            //Log.d(TAG, "Y: " + Utils.toHexString(pdu.getPKeyY()));
+            PublicKey peerPKey = MeshEC.getPeerPKey(pdu.getPKeyX(), pdu.getPKeyY());
+            addInput(pdu.provisionData());
+            secret = MeshEC.calculateSecret(pair, peerPKey);
+            confirmation();
+        } else if (pdu.getType() == MeshProvisionPDU.CONFIRMATION) {
+            Log.d(TAG, "Got Confirmation");
+            peerConfirmation = pdu.getConfirmation();
+            sendRandom();
+        } else if (pdu.getType() == MeshProvisionPDU.RANDOM) {
+            Log.d(TAG, "Got Random");
+            peerRandom = pdu.getRandom();
+            if (!Arrays.equals(peerConfirmation, remoteConfirmation(peerRandom))) {
+                Log.e(TAG, "Confirmation doesn't match!");
+                cancel();
             }
-            //cancel();
-        }
-    };
+            sendData();
+        } else if (pdu.getType() == MeshProvisionPDU.COMPLETE) {
+            Log.d(TAG, "Got Provision complete");
 
+            provisionComplete();
+        } else if (pdu.getType() == MeshProvisionPDU.FAILED) {
+            Log.e(TAG, "Got error PDU. Reason: " + pdu.errorString());
+        } else  cancel();
+    }
     private void provisionComplete() {
         MeshDevice device = new MeshDevice(mDevice, peerAddress, MeshEC.getDeviceKey(secret, provisionSalt));
         Log.d(TAG, "Device key: " + Utils.toHexString(device.getDeviceKey()));
@@ -144,12 +141,12 @@ public class MeshProvisionModel {
     private void sendData() {
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.DATA);
         byte[] NetworkKey = mNetwork.getNetKey();
-        Log.d(TAG, "Network key: " + Utils.toHexString(NetworkKey));
+        Log.v(TAG, "Network key: " + Utils.toHexString(NetworkKey));
         short KeyIndex = mNetwork.getNetKeyIndex();
         byte Flags = 0;
         int IVIndex = mNetwork.getIVIndex();
         peerAddress = mNetwork.getNextUnicastAddress();
-        Log.d(TAG, "Peer address: " + peerAddress);
+        Log.v(TAG, "Peer address: " + peerAddress);
         byte[] data = new byte[25];
         System.arraycopy(NetworkKey, 0, data, 0, 16);
         data[16] = (byte) (KeyIndex >>> 8);
@@ -161,6 +158,7 @@ public class MeshProvisionModel {
         data[23] = (byte) (peerAddress >>> 8);
         data[24] = (byte) (peerAddress & 0x0ff);
         pdu.setData(getProvisionData(data, peerRandom));
+        mProxy.send(pdu);
         mProxy.send(pdu);
     }
 
@@ -305,7 +303,7 @@ public class MeshProvisionModel {
         Log.d(TAG, "Confirmation PDU");
         MeshProvisionPDU pdu = new MeshProvisionPDU(MeshProvisionPDU.CONFIRMATION);
 
-        Log.d(TAG, "Confirmation inputs: " + confirmationInputs.toString());
+        //Log.d(TAG, "Confirmation inputs: " + confirmationInputs.toString());
         byte[] authValue = new byte[16];
         if ((mOutputOOBAction & 16) != 0) {
             // alphanumeric
@@ -315,7 +313,7 @@ public class MeshProvisionModel {
             byte[] bytes = ByteBuffer.allocate(mOutputOOBSize).putInt(Integer.parseInt(mOOBKey)).array();
             System.arraycopy(bytes, 0, authValue, authValue.length - bytes.length, bytes.length);
         }
-        Log.d(TAG, "Auth value: " + Utils.toHexString(authValue));
+        //Log.d(TAG, "Auth value: " + Utils.toHexString(authValue));
         byte[] inputBytes = new byte[confirmationInputs.size()];
         for (int index = 0; index < confirmationInputs.size(); index++) {
             inputBytes[index] = confirmationInputs.get(index);
@@ -325,7 +323,8 @@ public class MeshProvisionModel {
     }
 
     private void cancel() {
-        Log.d(TAG, "Provision canceled");
+        Log.e(TAG, "Provision canceled");
+        mFinishedCallback.finished(null, mNetwork);
         // tide up to initial state
     }
 
@@ -354,27 +353,33 @@ public class MeshProvisionModel {
         System.arraycopy(randomBytes, 0, randomAuth, 0, 16);
         System.arraycopy(mAuthValue, 0, randomAuth, 16, 16);
         //Log.d(TAG, "Remote Random||AuthValue: " + Utils.toHexString(randomAuth));
-        byte[] confirmation = new byte[16];
+        //byte[] confirmation = new byte[16];
 
-        MeshEC.AES_CMAC(randomAuth, mConfirmationKey);
+        byte[] confirmation = MeshEC.AES_CMAC(randomAuth, mConfirmationKey);
         //Log.d(TAG, "Remote confirmation: " + Utils.toHexString(confirmation));
         return confirmation;
     }
 
     private byte[] getProvisionData(byte[] data, byte[] peerRandom) {
         byte[] saltData = new byte[48];
+        //Log.i(TAG, "Confirmation salt: " + Utils.toHexString(mConfirmationSalt));
         System.arraycopy(mConfirmationSalt, 0, saltData, 0, 16);
+        //Log.i(TAG, "Random bytes: " + Utils.toHexString(mRandomBytes));
         System.arraycopy(mRandomBytes, 0, saltData, 16, 16);
         System.arraycopy(peerRandom, 0, saltData, 32, 16);
+        //Log.i(TAG, "Salt data: " + Utils.toHexString(saltData));
         provisionSalt = MeshEC.s1(saltData);
+        //Log.i(TAG, "Provision salt: " + Utils.toHexString(provisionSalt));
         byte[] sessionKey = MeshEC.k1(secret, provisionSalt, "prsk".getBytes());
+        //Log.i(TAG, "Session key: " + Utils.toHexString(sessionKey));
         byte[] sessionNonce = new byte[13];
         System.arraycopy(MeshEC.k1(secret, provisionSalt, "prsn".getBytes()), 3, sessionNonce, 0, 13);
-
+        //Log.i(TAG, "Session nonce: " + Utils.toHexString(sessionNonce));
         Pair<byte[], byte[]> t = MeshEC.AES_CCM(sessionKey, sessionNonce, data, 64);
         byte[] out = new byte[25 + 8];
         System.arraycopy(t.first, 0, out, 0, 25);
         System.arraycopy(t.second, 0, out, t.first.length, 8);
+        //Log.i(TAG, "Out: " + Utils.toHexString(out));
         return out;
     }
 }

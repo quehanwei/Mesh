@@ -65,7 +65,7 @@ public class MeshNetwork {
         NetworkID = MeshEC.k3(NetKey);
         mProxy = mContext.getProxy();
         byte[] t = MeshEC.k2(NetKey, new byte[1]);
-        Log.d(TAG, Utils.toHexString(t));
+        //Log.d(TAG, Utils.toHexString(t));
         mNID = (byte) (t[0] & 0x7F);
         System.arraycopy(t, 1, mEncryptionKey, 0, 16);
         System.arraycopy(t, 17, mPrivacyKey, 0, 16);
@@ -96,7 +96,7 @@ public class MeshNetwork {
     }
 
     public void newPDU(MeshProvisionPDU pdu){
-
+        mProvisioner.newPDU(pdu);
     }
 
     public short getAddress() {

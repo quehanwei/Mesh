@@ -21,64 +21,67 @@ public class MeshProxyModel {
         mContext = context;
         Log.d(TAG, "Binding service");
         mData = new ArrayList<>();
-        mContext.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROXY_DATA_OUT, new MeshBluetoothService.MeshCharacteristicChangedCallback() {
-            @Override
-            public void onCharacteristicChanged(byte[] data) {
-                byte type = (byte) (data[0] & 0x3f);        // 6.3.1
-                byte sar = (byte) (data[0] >>> 6);            // 6.3.1
-                switch (sar) {
-                    case 0:         // complete message
-                        if (!transactionRx) {
-                            mData.clear();
-                            transactionRx = false;
-                        } else {
-                            return;
-                        }
-                        break;
-                    case 1:
-                        if (!transactionRx) {
-                            mData.clear();
-                            transactionRx = true;
-                        } else {
-                            return;
-                        }
-                        break;
-                    case -2:
-                        if (!transactionRx) {
-                            return;
-                        }
-                        break;
-                    case -1:
-                        if (transactionRx) {
-                            transactionRx = false;
-                        } else {
-                            return;
-                        }
-                        break;
-                }
-                for (int i = 1; i < data.length; i++) mData.add(data[i]);
-                if (!transactionRx) {
-                    MeshNetwork network = mContext.getNetworkManager().getCurrentNetwork();
-                    switch (type) {
-                        case 0x00:
-                            network.newPDU(new MeshNetworkPDU(network, toArray(mData)));
-                            break;
-                        case 0x01:
-                            network.newPDU(new MeshBeaconPDU(toArray(mData)));
-                            break;
-                        case 0x02:
-                            //broadcastUpdate(MeshBluetoothService.ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE);
-                            break;
-                        case 0x03:
-                            network.newPDU(new MeshProvisionPDU(toArray(mData)));
-                            break;
-                        default:
-                            Log.d(TAG, "PDU of unknown type received");
+        mContext.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROXY_DATA_OUT, receiveCallback);
+        mContext.getMeshBluetoothService().registerCallback(MeshBluetoothService.MESH_PROVISION_DATA_OUT, receiveCallback);
+    }
+
+    MeshBluetoothService.MeshCharacteristicChangedCallback receiveCallback = new MeshBluetoothService.MeshCharacteristicChangedCallback() {
+        @Override
+        public void onCharacteristicChanged(byte[] data) {
+            byte type = (byte) (data[0] & 0x3f);        // 6.3.1
+            byte sar = (byte) (data[0] >>> 6);            // 6.3.1
+            switch (sar) {
+                case 0:         // complete message
+                    if (!transactionRx) {
+                        mData.clear();
+                        transactionRx = false;
+                    } else {
+                        return;
                     }
+                    break;
+                case 1:
+                    if (!transactionRx) {
+                        mData.clear();
+                        transactionRx = true;
+                    } else {
+                        return;
+                    }
+                    break;
+                case -2:
+                    if (!transactionRx) {
+                        return;
+                    }
+                    break;
+                case -1:
+                    if (transactionRx) {
+                        transactionRx = false;
+                    } else {
+                        return;
+                    }
+                    break;
+            }
+            for (int i = 1; i < data.length; i++) mData.add(data[i]);
+            if (!transactionRx) {
+                MeshNetwork network = mContext.getNetworkManager().getCurrentNetwork();
+                switch (type) {
+                    case 0x00:
+                        network.newPDU(new MeshNetworkPDU(network, toArray(mData)));
+                        break;
+                    case 0x01:
+                        network.newPDU(new MeshBeaconPDU(toArray(mData)));
+                        break;
+                    case 0x02:
+                        //broadcastUpdate(MeshBluetoothService.ACTION_PROXY_CONFIGURATION_DATA_AVAILABLE);
+                        break;
+                    case 0x03:
+                        network.newPDU(new MeshProvisionPDU(toArray(mData)));
+                        break;
+                    default:
+                        Log.e(TAG, "PDU of unknown type received");
                 }
             }
-        });
-    }
+        }
+    };
 
     public void send(MeshPDU pdu) {
         byte sar = 0;
@@ -88,7 +91,7 @@ public class MeshProxyModel {
         if (pdu instanceof MeshNetworkPDU) sar = (byte) (sar | 0);   // Type of PDU
 
         if (data.length > MeshBluetoothService.MTU - 1) {
-            Log.d(TAG, "Splitting PDU");
+            Log.v(TAG, "Splitting PDU");
             byte[] partData = new byte[MeshBluetoothService.MTU - 1];
             for (int i = 0; i < data.length; i += MeshBluetoothService.MTU - 1) {
                 if (i == 0) {
@@ -116,14 +119,14 @@ public class MeshProxyModel {
 
     private void sendPart(byte sar, byte[] data) {
         try {
-            Thread.sleep(200);
+            Thread.sleep(50);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         byte[] params = new byte[data.length + 1];
         params[0] = sar;
         System.arraycopy(data, 0, params, 1, data.length);
-        Log.d(TAG, "Sending: " + new BigInteger(1, params).toString(16));
+        Log.v(TAG, "Sending: " + Utils.toHexString(params));
         if ((sar & 0x3f) == 3) {
             mContext.getMeshBluetoothService().writeProvision(params);
         } else {
