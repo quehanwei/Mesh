@@ -10,6 +10,8 @@ public abstract class MeshModel {
     final static public short ID_HEALTH_MODEL_CLIENT = 0x0003;
     final static public short ID_ONOFF_MODEL_CLIENT = 0x1001;
     final static public short ID_ONOFF_MODEL_SERVER = 0x1000;
+    final static public short ID_LEVEL_MODEL_CLIENT = 0x1003;
+    final static public short ID_LEVEL_MODEL_SERVER = 0x1002;
 
     private MeshStackService mContext;
     protected short modelID;
