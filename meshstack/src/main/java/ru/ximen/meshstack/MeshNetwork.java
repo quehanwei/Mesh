@@ -34,7 +34,7 @@ public class MeshNetwork {
     private List<MeshDevice> provisioned;
     private MeshManager mManager;
     private MeshProvisionModel mProvisioner;
-    private MeshProxyModel mProxy;
+    //private MeshProxyModel mProxy;
     private int SEQ;
     private short mAddress = 0x0001;
 
@@ -63,7 +63,7 @@ public class MeshNetwork {
         mManager = manager;
         //NetworkID = MeshEC.k3(Utils.hexString2Bytes("7dd7364cd842ad18c17c2b820c84c3d6")); // test
         NetworkID = MeshEC.k3(NetKey);
-        mProxy = mContext.getProxy();
+        //mProxy = mContext.getProxy();
         byte[] t = MeshEC.k2(NetKey, new byte[1]);
         //Log.d(TAG, Utils.toHexString(t));
         mNID = (byte) (t[0] & 0x7F);
@@ -193,7 +193,7 @@ public class MeshNetwork {
     }
 
     public void sendPDU(MeshNetworkPDU pdu) {
-        mProxy.send(pdu);
+        mContext.getProxy().send(pdu);
     }
 
     private void updateIV() {

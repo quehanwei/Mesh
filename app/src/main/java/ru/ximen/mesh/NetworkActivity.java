@@ -92,17 +92,17 @@ public class NetworkActivity extends BasicServiceActivty {
     protected void onResume() {
         if(isBound) {
             mLstAdapter.notifyDataSetChanged();
+            if (!mStackService.getMeshBluetoothService().isConnected()) {
+                Toast.makeText(this, "Connecting to network " + mNetwork.getName(), Toast.LENGTH_SHORT).show();
+                if (mNetwork.getDevices().size() > 0)
+                    mStackService.getMeshBluetoothService().connect(findProxy());
+            }
         }
         super.onResume();
     }
 
     @Override
     protected void onStart() {
-        /*if (!mStackService.getMeshBluetoothService().isConnected()) {
-            Toast.makeText(this, "Connecting to network " + mNetwork.getName(), Toast.LENGTH_SHORT).show();
-            if (mNetwork.getDevices().size() > 0)
-                mStackService.getMeshBluetoothService().connect(findProxy());
-        }*/
         super.onStart();
     }
 

@@ -18,6 +18,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
@@ -26,7 +27,10 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static android.bluetooth.BluetoothGatt.GATT_SUCCESS;
@@ -56,6 +60,9 @@ public class MeshBluetoothService extends Service {
     private int mConnectionState = STATE_DISCONNECTED;      // Initial connection state
     private final IBinder mBinder = new LocalBinder();      // Service binder for methods access
     private int retryCount;
+    private LinkedList<byte[]> proxyQueue;
+    private LinkedList<byte[]> provisionQueue;
+    boolean sending = false;
 
     /**
      * UUID for provision DATA_IN characteristic.
@@ -147,7 +154,7 @@ public class MeshBluetoothService extends Service {
             new BluetoothGattCallback() {
                 @Override
                 public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                    String intentAction = "";
+                    String intentAction;
                     if (status == GATT_SUCCESS) {
                         retryCount = 0;
                         if (newState == STATE_CONNECTED) {
@@ -216,6 +223,14 @@ public class MeshBluetoothService extends Service {
                 }
 
                 @Override
+                public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                    super.onCharacteristicWrite(gatt, characteristic, status);
+                    Log.v(TAG, "Written to " + characteristic.getUuid().toString() + ". Status: " + status);
+                    sending = false;
+                    processQueue();
+                }
+
+                @Override
                 public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
                     super.onMtuChanged(gatt, mtu, status);
                     Log.i(TAG, "MTU is " + mtu);
@@ -234,9 +249,8 @@ public class MeshBluetoothService extends Service {
      * @param data data to be written
      */
     void writeProvision(byte[] data) {
-        mProvisionCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-        mProvisionCharacteristic.setValue(data);
-        mBluetoothGatt.writeCharacteristic(mProvisionCharacteristic);
+        provisionQueue.add(data);
+        processQueue();
     }
 
     /**
@@ -245,9 +259,31 @@ public class MeshBluetoothService extends Service {
      * @param data data to be written
      */
     void writeProxy(byte[] data) {
-        mProxyCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-        mProxyCharacteristic.setValue(data);
-        mBluetoothGatt.writeCharacteristic(mProxyCharacteristic);
+        proxyQueue.add(data);
+        processQueue();
+    }
+
+    void writeCharacteristic(final BluetoothGattCharacteristic characteristic, byte[] data) {
+        characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        characteristic.setValue(data);
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mBluetoothGatt.writeCharacteristic(characteristic);
+            }
+        }, Math.round(Math.random() * 30 + 20));
+    }
+
+    private void processQueue(){
+        if(!sending){
+            if (!provisionQueue.isEmpty()){
+                writeCharacteristic(mProvisionCharacteristic, provisionQueue.removeFirst());
+                sending = true;
+            } else if(!proxyQueue.isEmpty()){
+                writeCharacteristic(mProxyCharacteristic, proxyQueue.removeFirst());
+                sending = true;
+            }
+        }
     }
 
     /**
@@ -339,6 +375,8 @@ public class MeshBluetoothService extends Service {
         super.onCreate();
         mBroadcastManager = LocalBroadcastManager.getInstance(getApplicationContext());
         mCharacteristicCallbackMap = new HashMap<>();
+        provisionQueue = new LinkedList<>();
+        proxyQueue = new LinkedList<>();
     }
 
     @Nullable

@@ -6,8 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.UUID;
 
 /**
@@ -20,12 +19,16 @@ public class MeshDevice {
     private String mName;
     private byte[] mDeviceKey;
     private UUID mUUID;
-    private boolean mProxy = true;
-    private HashMap<Byte, byte[]> models;
+    private boolean isProxy = true;
+    private boolean isRelay = true;
+    private boolean isLowPower = false;
+    private boolean isFriend = false;
+    ArrayList<MeshElement> elements;
+
     //private BluetoothDevice mBluetoothDevice;
 
     public MeshDevice(JSONObject json) {
-        models = new HashMap<>();
+        elements = new ArrayList<>();
         try {
             mAddress = (short) json.getInt("address");
             mMAC = json.getString("mac");
@@ -33,14 +36,23 @@ public class MeshDevice {
             mDeviceKey = Utils.hexString2Bytes(json.getString("deviceKey"));
             JSONArray features = json.getJSONArray("features");
             for (int i = 0; i < features.length(); i++) {
-                if (features.getString(i).equals("proxy")) mProxy = true;
+                if (features.getString(i).equals("proxy")) isProxy = true; else isProxy = false;
+                if (features.getString(i).equals("relay")) isRelay = true; else isRelay = false;
+                if (features.getString(i).equals("friend")) isFriend = true; else isFriend = false;
+                if (features.getString(i).equals("low")) isLowPower = true; else isLowPower = false;
             }
-            JSONArray mod = json.getJSONArray("models");
-            for (int i = 0; i < mod.length(); i++) {
-                JSONObject obj = mod.getJSONObject(i);
-                byte AID = (byte)obj.getInt("aid");
-                String m = obj.getString("model");
-                models.put(AID, Utils.hexString2Bytes(m));
+
+            JSONArray elem = json.getJSONArray("elements");
+            for (int i = 0; i < elem.length(); i++) {
+                JSONObject obj = elem.getJSONObject(i);
+                MeshElement newElement = new MeshElement(obj.getString("name"), (short) obj.getInt("address"));
+                JSONArray models = obj.getJSONArray("models");
+                for (int j = 0; j < models.length(); j++) {
+                    JSONObject modelObj = models.getJSONObject(j);
+                    newElement.addModel(newElement.newModel((byte) modelObj.getInt("aid"), Utils.hexString2Bytes(modelObj.getString("id"))));
+                }
+                elements.add(newElement);
+
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -48,9 +60,11 @@ public class MeshDevice {
     }
 
     public MeshDevice(BluetoothDevice device, short address, byte[] deviceKey) {
+        elements = new ArrayList<>();
         mAddress = address;
         mMAC = device.getAddress();
         mDeviceKey = deviceKey;
+
     }
 
     public short getAddress() {
@@ -66,15 +80,27 @@ public class MeshDevice {
             json.put("name", mName);
             JSONArray features = new JSONArray();
             if (isProxy()) features.put("proxy");
+            if (isRelay()) features.put("relay");
+            if (isFriend()) features.put("friend");
+            if (isLowPower()) features.put("low");
+
             json.put("features", features);
-            JSONArray mod = new JSONArray();
-            for (Map.Entry<Byte, byte[]> entry : models.entrySet()) {
-                JSONObject obj = new JSONObject();
-                obj.put("model", Utils.toHexString(entry.getValue()));
-                obj.put("aid", entry.getKey());
-                mod.put(obj);
+            JSONArray elem = new JSONArray();
+            for ( MeshElement element : elements) {
+                JSONObject elemObj = new JSONObject();
+                elemObj.put("name", element.getName());
+                elemObj.put("address", element.getAddress());
+                JSONArray modArray = new JSONArray();
+                for (MeshElement.Model model: element.getModels()) {
+                    JSONObject modObj = new JSONObject();
+                    modObj.put("aid", model.getAid());
+                    modObj.put("id", model.getId());
+                    modArray.put(modObj);
+                }
+                elemObj.put("models", modArray);
+                elem.put(elemObj);
             }
-            json.put("models", mod);
+            json.put("elements", elem);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -98,6 +124,25 @@ public class MeshDevice {
     }
 
     public boolean isProxy() {
-        return mProxy;    // TODO: Replace to configuration result
+        return isProxy;    // TODO: Replace to configuration result
+    }
+
+    public boolean isRelay() {
+        return isRelay;    // TODO: Replace to configuration result
+    }
+
+    public boolean isFriend() {
+        return isFriend;    // TODO: Replace to configuration result
+    }
+    public boolean isLowPower() {
+        return isLowPower;    // TODO: Replace to configuration result
+    }
+
+    public void setConfiguration(MeshCompositionData data){
+        elements = data.getElements();
+        isRelay = data.isRelay();
+        isProxy = data.isProxy();
+        isFriend = data.isFriend();
+        isLowPower = data.isLowPower();
     }
 }
