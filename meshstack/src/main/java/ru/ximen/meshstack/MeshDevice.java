@@ -18,14 +18,12 @@ public class MeshDevice {
     private String mMAC;
     private String mName;
     private byte[] mDeviceKey;
-    private UUID mUUID;
+    //private UUID mUUID;
     private boolean isProxy = true;
     private boolean isRelay = true;
     private boolean isLowPower = false;
     private boolean isFriend = false;
-    ArrayList<MeshElement> elements;
-
-    //private BluetoothDevice mBluetoothDevice;
+    private ArrayList<MeshElement> elements;
 
     public MeshDevice(JSONObject json) {
         elements = new ArrayList<>();
@@ -36,10 +34,10 @@ public class MeshDevice {
             mDeviceKey = Utils.hexString2Bytes(json.getString("deviceKey"));
             JSONArray features = json.getJSONArray("features");
             for (int i = 0; i < features.length(); i++) {
-                if (features.getString(i).equals("proxy")) isProxy = true; else isProxy = false;
-                if (features.getString(i).equals("relay")) isRelay = true; else isRelay = false;
-                if (features.getString(i).equals("friend")) isFriend = true; else isFriend = false;
-                if (features.getString(i).equals("low")) isLowPower = true; else isLowPower = false;
+                isProxy = features.getString(i).equals("proxy");
+                isRelay = features.getString(i).equals("relay");
+                isFriend = features.getString(i).equals("friend");
+                isLowPower = features.getString(i).equals("low");
             }
 
             JSONArray elem = json.getJSONArray("elements");
@@ -144,5 +142,9 @@ public class MeshDevice {
         isProxy = data.isProxy();
         isFriend = data.isFriend();
         isLowPower = data.isLowPower();
+    }
+
+    public ArrayList<MeshElement> getElements() {
+        return elements;
     }
 }

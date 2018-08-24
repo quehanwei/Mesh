@@ -37,15 +37,15 @@ public class MeshElement {
         models.add(model);
     }
 
-    String getName() {
+    public String getName() {
         return name;
     }
 
-    short getAddress() {
+    public short getAddress() {
         return address;
     }
 
-    ArrayList<Model> getModels() {
+    public ArrayList<Model> getModels() {
         return models;
     }
 
