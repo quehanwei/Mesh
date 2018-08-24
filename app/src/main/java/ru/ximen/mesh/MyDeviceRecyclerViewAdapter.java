@@ -31,28 +31,27 @@ public class MyDeviceRecyclerViewAdapter extends RecyclerView.Adapter<MyDeviceRe
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.fragment_device, parent, false);
-        return new ViewHolder(view);
+        DeviceView dView = new DeviceView(parent.getContext());
+        dView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        //View view = LayoutInflater.from(parent.getContext())
+        //        .inflate(R.layout.fragment_device, parent, false);
+        return new ViewHolder(dView);
     }
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         MeshDevice device = mDevices.get(position);
         holder.mItem = device;
-        holder.mNameView.setText(device.getName());
-        holder.mAddrView.setText(String.valueOf(device.getAddress()));
+        //holder.mNameView.setText(device.getName());
+        //holder.mAddrView.setText(String.valueOf(device.getAddress()));
 
-        //if(device.ge)
+        holder.getCustomView().setDevice(device);
 
-        holder.mView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (null != mListener) {
-                    // Notify the active callbacks interface (the activity, if the
-                    // fragment is attached to one) that an item has been selected.
-                    mListener.onListFragmentInteraction(holder.mItem);
-                }
+        holder.mView.setOnClickListener(v -> {
+            if (null != mListener) {
+                // Notify the active callbacks interface (the activity, if the
+                // fragment is attached to one) that an item has been selected.
+                mListener.onListFragmentInteraction(holder.mItem);
             }
         });
     }
@@ -63,23 +62,27 @@ public class MyDeviceRecyclerViewAdapter extends RecyclerView.Adapter<MyDeviceRe
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        public final View mView;
-        public final TextView mNameView;
-        public final TextView mAddrView;
-        public final Switch mSwitchView;
+        public final DeviceView mView;
+        //public final TextView mNameView;
+        //public final TextView mAddrView;
+        //public final Switch mSwitchView;
         public MeshDevice mItem;
 
         public ViewHolder(View view) {
             super(view);
-            mView = view;
-            mSwitchView = view.findViewById(R.id.onoff_switch);
-            mNameView = view.findViewById(R.id.device_name);
-            mAddrView = view.findViewById(R.id.device_address);
+            mView = (DeviceView) view;
         }
 
+        public DeviceView getCustomView() {
+            return mView;
+        }
         @Override
         public String toString() {
-            return super.toString() + " '" + mNameView.getText() + "'";
+            return super.toString() + " '" + mItem.getName() + "'";
         }
+    }
+
+    MeshDevice getItemAt(int position){
+        return  mDevices.get(position);
     }
 }

@@ -107,4 +107,6 @@ public class DeviceListAdapter extends BaseAdapter {
         });
         return rowView;
     }
+
+
 }

@@ -6,17 +6,21 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
@@ -100,6 +104,38 @@ public class DeviceFragment extends Fragment {
                 recyclerView.setLayoutManager(new LinearLayoutManager(context));
             }
         }
+
+        ItemClickSupport.addTo(recyclerView).setOnItemClickListener((recyclerView, view1, position) -> {
+        });
+        ItemClickSupport.addTo(recyclerView).setOnItemLongClickListener((recyclerView, view12, position) -> {
+            PopupMenu popup = new PopupMenu(view12.getContext(), view12);
+            popup.getMenuInflater().inflate(R.menu.device_list_popup, popup.getMenu());
+            popup.show();
+            popup.setOnMenuItemClickListener(item -> {
+                switch (item.getItemId()) {
+                    case R.id.configure:
+                        break;
+                    case R.id.delete:
+                        new AlertDialog.Builder(getActivity())
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .setTitle("Delete confirmation")
+                                .setMessage("Are you sure you want to delete this device?")
+                                .setPositiveButton("Yes", (dialog, which) -> {
+                                    mNetwork.deleteDevice(mLstAdapter.getItemAt(position));
+                                    recyclerView.setAdapter(mLstAdapter);
+                                })
+                                .setNegativeButton("No", null)
+                                .show();
+                        break;
+                    case R.id.unprovision:
+                        break;
+                    default:
+                        break;
+                }
+                return true;
+            });
+            return true;
+        });
         return view;
     }
 
