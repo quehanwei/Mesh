@@ -3,7 +3,7 @@ package ru.ximen.meshstack;
 import java.util.ArrayList;
 
 public class MeshCompositionData {
-    public class Element{
+    /*public class Element{
         private short descriptor;
         private ArrayList<byte[]> sigModels;
         private ArrayList<byte[]> vendorModels;
@@ -21,7 +21,7 @@ public class MeshCompositionData {
         public ArrayList<byte[]> getVendorModels() {
             return vendorModels;
         }
-    }
+    }*/
 
     private short CID;
     private short PID;
@@ -31,41 +31,48 @@ public class MeshCompositionData {
     private boolean proxy;
     private boolean friend;
     private boolean lowPower;
-    private ArrayList<Element> elements;
+    private ArrayList<MeshElement> elements;
 
     public MeshCompositionData(byte[] data) {
-        CID = (short)((data[0] << 8) + data[1]);
-        PID = (short)((data[2] << 8) + data[3]);
-        VID = (short)((data[4] << 8) + data[5]);
-        CRPL = (short)((data[6] << 8) + data[7]);
+        CID = (short) ((data[0] << 8) + data[1]);
+        PID = (short) ((data[2] << 8) + data[3]);
+        VID = (short) ((data[4] << 8) + data[5]);
+        CRPL = (short) ((data[6] << 8) + data[7]);
         relay = (data[9] & 0x01) == 1;
         proxy = (data[9] & 0x02) == 2;
         friend = (data[9] & 0x04) == 4;
         lowPower = (data[9] & 0x08) == 8;
+        elements = new ArrayList<>();
         int i = 10;
-            short descriptor = (short)((data[i] << 8) + data[i+1]);
-            byte nums  = data[i+2];
-            byte numv  = data[i+3];
-            ArrayList<byte[]> sigModels = new ArrayList<>();
-            ArrayList<byte[]> vendorModels = new ArrayList<>();
-            i+=4;
+        while(i<data.length) {
+            short descriptor = (short) ((data[i] << 8) + data[i + 1]);
+            byte nums = data[i + 2];
+            byte numv = data[i + 3];
+            ArrayList<byte[]> models = new ArrayList<>();
+            i += 4;
             for (int j = 0; j < nums; j++) {
                 byte[] t = new byte[2];
                 t[0] = data[i];
-                t[1] = data[i+1];
-                sigModels.add(t);
-                i+=(j+1)*2;
+                t[1] = data[i + 1];
+                models.add(t);
+                i += (j + 1) * 2;
             }
             for (int j = 0; j < nums; j++) {
                 byte[] t = new byte[4];
                 t[0] = data[i];
-                t[1] = data[i+1];
-                t[2] = data[i+2];
-                t[3] = data[i+3];
-                i+=(j+1)*4;
+                t[1] = data[i + 1];
+                t[2] = data[i + 2];
+                t[3] = data[i + 3];
+                models.add(t);
+                i += (j + 1) * 4;
             }
-            elements = new ArrayList<>();
-        elements.add(new Element(descriptor, sigModels, vendorModels));
+            MeshElement newElement = new MeshElement("unnamed", (short) 0);
+            for (byte[] model : models) {
+                newElement.addModel(newElement.newModel((byte) 0, model));
+            }
+            newElement.setDescriptor(descriptor);
+            elements.add(newElement);
+        }
     }
 
     public short getCID() {
@@ -100,7 +107,7 @@ public class MeshCompositionData {
         return lowPower;
     }
 
-    public ArrayList<Element> getElements() {
+    public ArrayList<MeshElement> getElements() {
         return elements;
     }
 }

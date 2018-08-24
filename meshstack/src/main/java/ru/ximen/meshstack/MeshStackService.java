@@ -51,8 +51,8 @@ public class MeshStackService extends Service {
         super.onCreate();
         // Binding bluetooth service
         Intent intent = new Intent(this, MeshBluetoothService.class);
-        if (bindService(intent, mConnection, BIND_AUTO_CREATE)) {
-            Log.e("Application", "Error binding service");
+        if (!bindService(intent, mConnection, BIND_AUTO_CREATE)) {
+            Log.e("MeshStackService", "Error binding service");
         }
         // Initializing stack objects
         mManager = new MeshManager(this, getFilesDir());

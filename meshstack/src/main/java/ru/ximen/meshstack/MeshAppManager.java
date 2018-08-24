@@ -55,4 +55,9 @@ public class MeshAppManager {
         }
         return json;
     }
+
+    public HashMap<String, Pair> getApplications() {
+        return keys;
+    }
+
 }

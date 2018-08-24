@@ -159,7 +159,6 @@ public class MeshProvisionModel {
         data[24] = (byte) (peerAddress & 0x0ff);
         pdu.setData(getProvisionData(data, peerRandom));
         mProxy.send(pdu);
-        mProxy.send(pdu);
     }
 
     private void sendRandom() {

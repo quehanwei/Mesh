@@ -43,7 +43,7 @@ public class StartActivity extends BasicServiceActivty {
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
         if (sharedPref.getBoolean("autoload", false)){
             String network = sharedPref.getString("network", "");
-            Intent intent = new Intent(StartActivity.this, NetworkActivity.class);
+            Intent intent = new Intent(StartActivity.this, ApplicationActivity.class);
             intent.putExtra("ru.ximen.mesh.NETWORK", network);
             Log.d("StartActivity", "Network name: " + network);
             startActivity(intent);
